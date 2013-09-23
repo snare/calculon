@@ -123,7 +123,7 @@ class CalculonDisplay (object):
             elif fmt == VALUE_FORMAT_ASC:
                 s = struct.pack('Q', self.value)
                 for c in s:
-                    if c not in string.printable:
+                    if c not in string.printable or c == '\n':
                         fmtd += '.'
                     else:
                         fmtd += c
