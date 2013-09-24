@@ -90,6 +90,9 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
     return False
 
 
+# Get rid of annoying completion in the repl
+bpython.repl.Repl.complete = lambda s, m: None
+
 def main(args=None, locals_=None, banner=None):
     # this is kinda hacky, but bpython doesn't play well with others
     bpython.cli.init_wins = init_wins
