@@ -6,7 +6,7 @@ A bpython-based programmer's calculator
 
 I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a python REPL, so I figured I'd have a go at writing a quick terminal-based calculator using curses.
 
-[![calculon example](http://i.imgur.com/ajJ7ZuM.png)](#example)
+[![calculon example](http://i.imgur.com/0RcD1Yp.png)](#example)
 
 Calculon is basically a curses window tacked onto `bpython`. Type python code into the `bpython` prompt, and any sane numeric values that come out will be displayed. At this stage it's barely working, let alone complete.
 
