@@ -11,7 +11,8 @@ setup(
     url = "https://github.com/snarez/calculon",
     packages=['calculon'],
     install_requires = ['bpython'],
-    entry_points = {
-        'console_scripts': ['calculon = calculon:main']
-    }
+    package_data = {'calculon': ['config/*']},
+    install_package_data = True,
+    entry_points = {'console_scripts': ['calculon = calculon:main']},
+    zip_safe=False
 )

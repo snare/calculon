@@ -90,14 +90,15 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
     return False
 
 
-# Get rid of annoying completion in the repl
-bpython.repl.Repl.complete = lambda s, m: None
-
 def main(args=None, locals_=None, banner=None):
     # this is kinda hacky, but bpython doesn't play well with others
+    # monkey magic!
     bpython.cli.init_wins = init_wins
     bpython.cli.do_resize = do_resize
     bpython.repl.Interpreter.runsource = runsource
+    # disable autocomplete, otherwise it appears over the main display
+    # might fix this later and add a config option to enable/disable 
+    bpython.repl.Repl.complete = lambda s, m: None
     bpython.cli.main()
 
 

@@ -22,3 +22,8 @@ A standard `setuptools` script is included.
 
     # python setup.py install
 
+
+Configuration
+-------------
+
+An example config (`example.cfg`) is included with the source. Copy it to `~/.calculon/config` and edit it if you like, otherwise the defaults in the `defaults.cfg` will be used.

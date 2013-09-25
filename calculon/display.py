@@ -4,57 +4,53 @@ import string
 import struct
 from bpython.cli import gethw
 
-BIN_MODE_OFF = 0
-BIN_MODE_WIDE = 1
-BIN_MODE_NARROW = 2
+from .env import CONFIG
 
 BIN_MODE_WIDTH_WIDE = 84
 BIN_MODE_WIDTH_NARROW = 44
 
-BIN_FMT = '{:0=64b}'
+BASE_FMT = {
+    'h': '0x{0:X}',
+    'd': '{0:d}',
+    'o': '{0:o}',
+    'b': '{:0=64b}'
+}
 
-VALUE_FORMAT_HEX = 'h'
-VALUE_FORMAT_DEC = 'd'
-VALUE_FORMAT_OCT = 'o'
-VALUE_FORMAT_ASC = 'a'
-VALUE_FORMAT_UNI = 'u'
-
-VALUE_FORMAT_HEX_FMT = '0x{0:X}'
-VALUE_FORMAT_DEC_FMT = '{0:d}'
-VALUE_FORMAT_OCT_FMT = '{0:o}'
-
-ALIGN_LEFT = 0
-ALIGN_RIGHT = 1
+CURSES_ATTRS = {
+    "altcharset": curses.A_ALTCHARSET,
+    "blink": curses.A_BLINK,
+    "bold": curses.A_BOLD,
+    "dim": curses.A_DIM,
+    "normal": curses.A_NORMAL,
+    "reverse": curses.A_REVERSE,
+    "standout": curses.A_STANDOUT,
+    "underline": curses.A_UNDERLINE,
+}
 
 class CalculonDisplay (object):
     def __init__(self):
+        self.config = self.init_config(CONFIG)
         h, w = gethw()
         self.value = 0
-        self.bits = 64
-        self.bin_mode = BIN_MODE_NARROW
-        self.value_formats = [VALUE_FORMAT_HEX, VALUE_FORMAT_DEC, VALUE_FORMAT_OCT, VALUE_FORMAT_ASC]#, VALUE_FORMAT_UNI]
-        self.vars = []
-        self.align = ALIGN_LEFT
-        self.padding = {
-            'left': 2, 'right': 2,
-            'top': 2, 'bottom': 1,
-            'bintop': 1, 'binbottom': 0,
-            'vartop': 1, 'varbottom': 0,
-            'label': 2
-        }
-        self.attrs = {
-            'header':   curses.A_BOLD | curses.color_pair(17),
-            'binlabel': curses.A_BOLD | curses.color_pair(2),
-            'vallabel': curses.A_BOLD | curses.color_pair(2),
-            'binval':                   curses.color_pair(3),
-            'hexval':   curses.A_BOLD | curses.color_pair(8),
-            'decval':   curses.A_BOLD | curses.color_pair(6),
-            'octval':   curses.A_BOLD | curses.color_pair(6),
-            'ascval':   curses.A_BOLD | curses.color_pair(7),
-            'unival':   curses.A_BOLD | curses.color_pair(7),
-        }
+        self.bits = self.config['bits']
+        self.bin_mode = self.config['bin_mode']
+        self.formats = self.config['formats']
+        self.vars = self.config['variables']
+        self.align = self.config['align']
+        self.padding = self.config['padding']
+        self.attrs = self.config['attrs']
         self.header = 'calculon v1.0'
         self.show_header = True
+
+    def init_config(self, config):
+        # update curses text attributes
+        for sec in config['attrs']:
+            attrs = 0
+            for attr in config['attrs'][sec]['attrs']:
+                attrs |= CURSES_ATTRS[attr]
+            attrs |= curses.color_pair(config['attrs'][sec]['colour_pair'])
+            config['attrs'][sec] = attrs
+        return config
 
     def set_win(self, win):
         self.win = win
@@ -83,11 +79,11 @@ class CalculonDisplay (object):
         # top and bottom padding
         n = self.padding['top'] + self.padding['bottom']
         # 1 per value format
-        n += len(self.value_formats)
+        n += len(self.formats)
         # 4 lines of binary + 1 extra padding above binary
-        if self.bin_mode == BIN_MODE_NARROW:
+        if self.bin_mode == "narrow":
             n += 4
-        elif self.bin_mode == BIN_MODE_WIDE:
+        elif self.bin_mode == "wide":
             n += 2
         n += self.padding['bintop'] + self.padding['binbottom']
         # 1 per variable, and padding above variables if we have any
@@ -96,7 +92,7 @@ class CalculonDisplay (object):
         return n
 
     def num_cols(self):
-        if self.bin_mode == BIN_MODE_WIDE:
+        if self.bin_mode == "wide":
             c = BIN_MODE_WIDTH_WIDE + self.padding['left'] + self.padding['right']
         else:
             c = BIN_MODE_WIDTH_NARROW + self.padding['left'] + self.padding['right']
@@ -109,42 +105,36 @@ class CalculonDisplay (object):
 
     def draw_value(self):
         y = self.padding['top']
-        for fmt in self.value_formats:
+        for fmt in self.formats:
             fmtd = ''
-            if fmt == VALUE_FORMAT_HEX:
-                fmtd = VALUE_FORMAT_HEX_FMT.format(self.value)
-                attr = self.attrs['hexval']
-            elif fmt == VALUE_FORMAT_DEC:
-                fmtd = VALUE_FORMAT_DEC_FMT.format(self.value)
-                attr = self.attrs['decval']
-            elif fmt == VALUE_FORMAT_OCT:
-                fmtd = VALUE_FORMAT_OCT_FMT.format(self.value)
-                attr = self.attrs['octval']
-            elif fmt == VALUE_FORMAT_ASC:
+            if fmt in ['h', 'd', 'o']:
+                fmtd = BASE_FMT[fmt].format(self.value)
+                attr = self.attrs[fmt + 'val']
+            elif fmt == 'a':
                 s = struct.pack('Q', self.value)
                 for c in s:
                     if c not in string.printable or c == '\n':
                         fmtd += '.'
                     else:
                         fmtd += c
-                attr = self.attrs['ascval']
-            elif fmt == VALUE_FORMAT_UNI:
+                attr = self.attrs['aval']
+            elif fmt == 'u':
                 # fmtd = struct.pack('Q', self.value).decode('utf-16')
-                attr = self.attrs['unival']
-            if self.align == ALIGN_RIGHT:
+                attr = self.attrs['uval']
+            if self.align == 'right':
                 self.win.addstr(y, self.num_cols() - len(fmtd) - 4, fmtd, attr)
                 self.win.addstr(y, self.num_cols() - self.padding['right'], fmt, self.attrs['vallabel'])
-            elif self.align == ALIGN_LEFT:
+            elif self.align == 'left':
                 self.win.addstr(y, self.padding['left'] + len(' ' + fmt) + self.padding['label'], fmtd, attr)
                 self.win.addstr(y, self.padding['left'], ' ' + fmt, self.attrs['vallabel'])
             y += 1
 
     def draw_binary(self):
-        s = BIN_FMT.format(self.value)
-        y = len(self.value_formats) + self.padding['top'] + self.padding['bintop']
+        s = BASE_FMT['b'].format(self.value)
+        y = len(self.formats) + self.padding['top'] + self.padding['bintop']
         x = self.padding['left']
         p = 0
-        if self.bin_mode == BIN_MODE_NARROW:
+        if self.bin_mode == 'narrow':
             left = ['63', '47', '31', '15']
             right = ['48', '32', '16', '0']
             for i in range(4):
@@ -160,8 +150,8 @@ class CalculonDisplay (object):
                 elif i != 0 and i % 4 == 0:
                     p += 1
                 x += 1
-                self.win.addstr(y, x*2+p, s[i], self.attrs['binval'])
-        elif self.bin_mode == BIN_MODE_WIDE:
+                self.win.addstr(y, x*2+p, s[i], self.attrs['bval'])
+        elif self.bin_mode == 'wide':
             left = ['63', '31']
             right = ['32', '0']
             for i in range(2):
@@ -177,7 +167,7 @@ class CalculonDisplay (object):
                 elif i != 0 and i % 4 == 0:
                     p += 1
                 x += 1
-                self.win.addstr(y, x*2+p, s[i], self.attrs['binval'])
+                self.win.addstr(y, x*2+p, s[i], self.attrs['bval'])
 
     def draw_vars(self):
         pass
