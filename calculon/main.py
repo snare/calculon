@@ -18,6 +18,7 @@ from .display import CalculonDisplay
 
 disp = None
 last_result = None
+last_line = ""
 
 def resize(self):
     global disp
@@ -66,11 +67,25 @@ def init_wins(scr, config):
 
 
 def runsource(self, source, filename='<input>', symbol='single', encode=True):
-    global disp, last_result
+    global disp, last_result, last_line
 
+    # if the code starts with an operator, prepend the _ variable
+    for op in ['-','+','*','/','^','|','&','<','>']:
+        if source.startswith(op):
+            source = '_ ' + source
+            break
+
+    # if we got an empty source line, re-evaluate the last line
+    if len(source) == 0:
+        source = last_line
+    else:
+        last_line = source
+
+    # this is from bpython
     if encode:
         source = '# coding: %s\n%s' % (self.encoding, source.encode(self.encoding))
 
+    # so is this
     try:
         code = self.compile(source, filename, symbol)
     except (OverflowError, SyntaxError, ValueError):
@@ -79,22 +94,26 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
     if code is None:
         return True
 
+    # if we got a valid code object, run it
     self.runcode(code)
 
+    # push functions and data into locals if they're not there
     if 'watch' not in self.locals:
         self.locals['unwatch'] = unwatch
         self.locals['watch'] = watch
         self.locals['vars'] = disp.vars
         self.locals['var_fmt'] = disp.var_fmt
 
+    # update value from last operation
     try:
         result = self.locals['__builtins__']['_']
         if type(result) in [int, long] and result != last_result['_']:
             disp.update_value(result)
             last_result['_'] = result
     except KeyError, e:
-        pass
+        self.locals['__builtins__']['_'] = 0
 
+    # update values of variables
     for varname in disp.var_names:
         try:
             result = self.locals[varname]
