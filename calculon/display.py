@@ -27,6 +27,8 @@ CURSES_ATTRS = {
     "underline": curses.A_UNDERLINE,
 }
 
+VALID_FORMATS = ['h','d','o','a','u','b']
+
 class CalculonDisplay (object):
     def __init__(self):
         self.config = self.init_config(CONFIG)
@@ -105,7 +107,7 @@ class CalculonDisplay (object):
 
     def draw_value(self):
         y = self.padding['top']
-        for fmt in self.formats:
+        for fmt in filter(lambda x: x in VALID_FORMATS and x != 'b', self.formats):
             fmtd = ''
             if fmt in ['h', 'd', 'o']:
                 fmtd = BASE_FMT[fmt].format(self.value)
