@@ -5,6 +5,8 @@ from locale import LC_ALL, setlocale
 import signal
 from types import ModuleType
 import code
+from collections import defaultdict
+import itertools
 
 import bpython
 import bpython.cli
@@ -17,19 +19,17 @@ from .display import CalculonDisplay
 disp = None
 last_result = None
 
-
-def do_resize(caller):
-    h, w = gethw()
-    if not h:
-        return
-
-    curses.endwin()
-    os.environ["LINES"] = str(h-disp.num_lines())
-    os.environ["COLUMNS"] = str(w)
-    curses.doupdate()
-    bpython.cli.DO_RESIZE = False
-
-    caller.resize()
+def resize(self):
+    global disp
+    """This method exists simply to keep it straight forward when
+    initialising a window and resizing it."""
+    self.size()
+    self.scr.erase()
+    self.scr.resize(self.h - disp.num_rows(), self.w)
+    self.scr.mvwin(self.y + disp.num_rows(), self.x)
+    self.statusbar.resize(refresh=False)
+    self.redraw()
+    disp.redraw()
 
 
 def init_wins(scr, config):
@@ -39,18 +39,20 @@ def init_wins(scr, config):
     background = get_colpair(config, 'background')
     h, w = gethw()
 
-    # setup display window for calculon
+    # setup display object and calculate height
     disp = CalculonDisplay()
     dh = disp.num_rows()
-    display_win = newwin(background, dh, w, 0, 0)
-    display_win.keypad(1)
-    disp.set_win(display_win)
-    disp.update_value(0)
 
     # setup REPL window
     main_win = newwin(background, h - 1 - dh, w, dh, 0)
     main_win.scrollok(True)
     main_win.keypad(1)
+
+    # set up display window
+    display_win = newwin(background, dh, w, 0, 0)
+    display_win.keypad(1)
+    disp.set_win(display_win, main_win)
+    disp.update_value(0)
 
     # setup status bar
     statusbar = Statusbar(scr, main_win, background, config,
@@ -79,26 +81,64 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
 
     self.runcode(code)
 
+    if 'watch' not in self.locals:
+        self.locals['unwatch'] = unwatch
+        self.locals['watch'] = watch
+        self.locals['vars'] = disp.vars
+        self.locals['var_fmt'] = disp.var_fmt
+
     try:
         result = self.locals['__builtins__']['_']
-        if type(result) in [int, long] and result != last_result:
+        if type(result) in [int, long] and result != last_result['_']:
             disp.update_value(result)
-            last_result = result
-    except KeyError:
+            last_result['_'] = result
+    except KeyError, e:
         pass
+
+    for varname in disp.var_names:
+        try:
+            result = self.locals[varname]
+            if type(result) in [int, long] and result != last_result[varname]:
+                disp.update_value(result, varname)
+                last_result[varname] = result
+        except KeyError:
+            pass
 
     return False
 
 
-def main(args=None, locals_=None, banner=None):
+def watch(varname, format='h'):
+    disp.watch_var(varname, format)
+    bpython.cli.DO_RESIZE = True
+    disp.redraw()
+
+
+def unwatch(varname, format='h'):
+    disp.unwatch_var(varname)
+    bpython.cli.DO_RESIZE = True
+    disp.redraw()
+
+
+def constant_factory(value):
+    return itertools.repeat(value).next
+
+
+def main():
+    global last_result
+
+    last_result = defaultdict(constant_factory(None))
+
     # this is kinda hacky, but bpython doesn't play well with others
     # monkey magic!
     bpython.cli.init_wins = init_wins
-    bpython.cli.do_resize = do_resize
+    # bpython.cli.do_resize = do_resize
     bpython.repl.Interpreter.runsource = runsource
+    bpython.cli.CLIRepl.resize = resize
     # disable autocomplete, otherwise it appears over the main display
     # might fix this later and add a config option to enable/disable 
     bpython.repl.Repl.complete = lambda s, m: None
+
+    # run the bpython repl
     bpython.cli.main()
 
 
