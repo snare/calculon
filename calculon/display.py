@@ -2,7 +2,6 @@ import sys
 import curses
 import string
 import struct
-from bpython.cli import gethw
 
 from .env import CONFIG
 
@@ -30,15 +29,16 @@ CURSES_ATTRS = {
 VALID_FORMATS = ['h','d','o','a','u','b']
 
 class CalculonDisplay (object):
-    def __init__(self):
+
+    def __init__(self, h, w):
         self.config = self.init_config(CONFIG)
-        h, w = gethw()
         self.bits = self.config['bits']
         self.bin_mode = self.config['bin_mode']
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
         self.attrs = self.config['attrs']
+
         self.header = 'calculon v1.0'
         self.show_header = True
         self.vars = {}

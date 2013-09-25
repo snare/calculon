@@ -12,7 +12,6 @@ import bpython
 import bpython.cli
 import bpython.args
 import bpython.repl
-from bpython.cli import *
 
 from .display import CalculonDisplay
 
@@ -37,31 +36,31 @@ def init_wins(scr, config):
     global disp
 
     # get background colour and dimensions
-    background = get_colpair(config, 'background')
-    h, w = gethw()
+    background = bpython.cli.get_colpair(config, 'background')
+    h, w = bpython.cli.gethw()
 
     # setup display object and calculate height
-    disp = CalculonDisplay()
+    disp = CalculonDisplay(h, w)
     dh = disp.num_rows()
 
     # setup REPL window
-    main_win = newwin(background, h - 1 - dh, w, dh, 0)
+    main_win = bpython.cli.newwin(background, h - 1 - dh, w, dh, 0)
     main_win.scrollok(True)
     main_win.keypad(1)
 
     # set up display window
-    display_win = newwin(background, dh, w, 0, 0)
+    display_win = bpython.cli.newwin(background, dh, w, 0, 0)
     display_win.keypad(1)
     disp.set_win(display_win, main_win)
     disp.update_value(0)
 
     # setup status bar
-    statusbar = Statusbar(scr, main_win, background, config,
+    statusbar = bpython.cli.Statusbar(scr, main_win, background, config,
         " <%s> Rewind  <%s> Save  <%s> Pastebin  <%s> Pager  <%s> Show Source " %
             (config.undo_key, config.save_key,
              config.pastebin_key, config.last_output_key,
              config.show_source_key),
-            get_colpair(config, 'main'))
+            bpython.cli.get_colpair(config, 'main'))
 
     return main_win, statusbar
 
