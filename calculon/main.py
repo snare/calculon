@@ -7,6 +7,7 @@ from types import ModuleType
 import code
 from collections import defaultdict
 import itertools
+import types
 
 import bpython
 import bpython.cli
@@ -18,18 +19,26 @@ from .display import CalculonDisplay
 disp = None
 last_result = None
 last_line = ""
+repl = None
 
-def resize(self):
-    global disp
-    """This method exists simply to keep it straight forward when
-    initialising a window and resizing it."""
-    self.size()
-    self.scr.erase()
-    self.scr.resize(self.h - disp.num_rows(), self.w)
-    self.scr.mvwin(self.y + disp.num_rows(), self.x)
-    self.statusbar.resize(refresh=False)
-    self.redraw()
-    disp.redraw()
+
+class CalculonRepl (CLIRepl):
+    def __new__(cls, *args, **kwargs):
+        global repl
+        repl = super(CLIRepl, cls).__new__(cls, *args, **kwargs)
+        return repl
+
+    def resize(self):
+        global disp
+        """This method exists simply to keep it straight forward when
+        initialising a window and resizing it."""
+        self.size()
+        self.scr.erase()
+        self.scr.resize(self.h - disp.num_rows(), self.w)
+        self.scr.mvwin(self.y + disp.num_rows(), self.x)
+        self.statusbar.resize(refresh=False)
+        self.redraw()
+        disp.redraw()
 
 
 def init_wins(scr, config):
@@ -66,7 +75,7 @@ def init_wins(scr, config):
 
 
 def runsource(self, source, filename='<input>', symbol='single', encode=True):
-    global disp, last_result, last_line
+    global disp, last_result, last_line, repl
 
     # if the code starts with an operator, prepend the _ variable
     for op in ['-','+','*','/','^','|','&','<','>']:
@@ -98,10 +107,11 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
 
     # push functions and data into locals if they're not there
     if 'watch' not in self.locals:
-        self.locals['unwatch'] = unwatch
         self.locals['watch'] = watch
+        self.locals['unwatch'] = unwatch
         self.locals['vars'] = disp.vars
-        self.locals['var_fmt'] = disp.var_fmt
+        self.locals['repl'] = repl
+        self.locals['disp'] = disp
 
     # update value from last operation
     try:
@@ -127,13 +137,14 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
 
 def watch(varname, format='h'):
     disp.watch_var(varname, format)
-    bpython.cli.DO_RESIZE = True
+    bpython.cli.do_resize(repl)
+    repl.redraw()
     disp.redraw()
 
 
 def unwatch(varname, format='h'):
     disp.unwatch_var(varname)
-    bpython.cli.DO_RESIZE = True
+    bpython.cli.do_resize(repl)
     disp.redraw()
 
 
@@ -149,9 +160,9 @@ def main():
     # this is kinda hacky, but bpython doesn't play well with others
     # monkey magic!
     bpython.cli.init_wins = init_wins
-    # bpython.cli.do_resize = do_resize
     bpython.repl.Interpreter.runsource = runsource
-    bpython.cli.CLIRepl.resize = resize
+    bpython.cli.CLIRepl = CalculonRepl
+
     # disable autocomplete, otherwise it appears over the main display
     # might fix this later and add a config option to enable/disable 
     bpython.repl.Repl.complete = lambda s, m: None
