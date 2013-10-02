@@ -210,9 +210,9 @@ class CalculonDisplay (object):
                     fmtd += c
             attr = self.attrs['aval']
         elif fmt == 'u':
+            # s = ('{0:0=%dX}' % (self.bits/4)).format(value)
+            # a = [(chr(int(s[i:i+2],16)) + chr(int(s[i+2:i+4],16))).decode('utf-16') for i in range(0, len(s), 4)]
             attr = self.attrs['uval']
-        if value >= 1<<self.bits:
-            attr = self.attrs['err']
         if self.align == 'right':
             self.win.addstr(row, self.num_cols() - self.padding['right'] - self.padding['label'] - len(fmtd) - 2, fmtd, attr)
         elif self.align == 'left':
@@ -241,6 +241,10 @@ class CalculonDisplay (object):
         y = len(self.get_value_formats()) + self.padding['top'] + self.padding['bintop']
         x = self.padding['left']
         p = 0
+        if self.vars['_'] >= 1<<self.bits:
+            attr = self.attrs['err']
+        else:
+            attr = self.attrs['bval']
         for i in xrange(len(s)):
             if i != 0 and i % self.bin_row == 0:
                 y += 1
@@ -251,7 +255,7 @@ class CalculonDisplay (object):
             elif i != 0 and i % 4 == 0:
                 p += 1
             x += 1
-            self.win.addstr(y, x*2+p, s[i], self.attrs['bval'])
+            self.win.addstr(y, x*2+p, s[i], attr)
 
     def draw_binary_labels(self):
         rows = range(self.bits / self.bin_row)
