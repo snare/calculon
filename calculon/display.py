@@ -195,6 +195,7 @@ class CalculonDisplay (object):
             fmtd = BASE_FMT[fmt].format(value)
             attr = self.attrs[fmt + 'val']
         elif fmt == 'a':
+            if value < 0: return
             s = struct.pack('Q', value)
             for c in s:
                 if c not in string.printable or c == '\n':
