@@ -22,10 +22,10 @@ last_line = ""
 repl = None
 
 
-class CalculonRepl (CLIRepl):
+class CalculonRepl (bpython.cli.CLIRepl):
     def __new__(cls, *args, **kwargs):
         global repl
-        repl = super(CLIRepl, cls).__new__(cls, *args, **kwargs)
+        repl = super(bpython.cli.CLIRepl, cls).__new__(cls, *args, **kwargs)
         return repl
 
     def resize(self):
