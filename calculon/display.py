@@ -7,12 +7,14 @@ from .env import CONFIG
 
 BIN_MODE_WIDTH_WIDE = 84
 BIN_MODE_WIDTH_NARROW = 44
+BIN_MODE_ROW_WIDE = 32
+BIN_MODE_ROW_NARROW = 16
 
 BASE_FMT = {
     'h': '0x{0:X}',
     'd': '{0:d}',
     'o': '{0:o}',
-    'b': '{:0=64b}'
+    'b': '{:0=%db}'
 }
 
 CURSES_ATTRS = {
@@ -32,8 +34,9 @@ class CalculonDisplay (object):
 
     def __init__(self, h, w):
         self.config = self.init_config(CONFIG)
-        self.bits = self.config['bits']
         self.bin_mode = self.config['bin_mode']
+        self.bin_row = self.config['bin_row'] 
+        self.bits = self.config['bits'] 
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
@@ -61,6 +64,12 @@ class CalculonDisplay (object):
                 attrs |= CURSES_ATTRS[attr]
             attrs |= curses.color_pair(config['attrs'][sec]['colour_pair'])
             config['attrs'][sec] = attrs
+
+        # round up bits to nearest row
+        config['bin_row'] = BIN_MODE_ROW_NARROW if config['bin_mode'] == "narrow" else BIN_MODE_ROW_WIDE
+        if config['bits'] % config['bin_row'] > 0:
+            config['bits'] += config['bin_row'] - (config['bits'] % config['bin_row'])
+
         return config
 
     def set_win(self, win, repl_win):
@@ -112,6 +121,7 @@ class CalculonDisplay (object):
             self.draw_state['value'] = False
         if self.draw_state['vallabel'] or self.draw_state['all']:
             self.draw_value_labels()
+            self.draw_binary_labels()
             self.draw_state['vallabel'] = False
         if self.draw_state['varlabel'] or self.draw_state['all']:
             self.draw_var_labels()
@@ -145,11 +155,7 @@ class CalculonDisplay (object):
         return len(self.get_value_formats())
 
     def num_rows_bin(self):
-        if self.bin_mode == "narrow":
-            n = 4
-        elif self.bin_mode == "wide":
-            n = 2
-        return n + self.padding['bintop'] + self.padding['binbottom']
+        return self.bits / self.bin_row + self.padding['bintop'] + self.padding['binbottom']
 
     def num_rows_vars(self):
         n = len(self.var_fmt)
@@ -195,15 +201,17 @@ class CalculonDisplay (object):
             fmtd = BASE_FMT[fmt].format(value)
             attr = self.attrs[fmt + 'val']
         elif fmt == 'a':
-            s = struct.pack('Q', value)
-            for c in s:
+            s = ('{0:0=%dX}' % (self.bits/4)).format(value)
+            a = [chr(int(s[i:i+2],16)) for i in range(0, len(s), 2)]
+            for c in a:
                 if c not in string.printable or c == '\n':
                     fmtd += '.'
                 else:
                     fmtd += c
             attr = self.attrs['aval']
         elif fmt == 'u':
-            # fmtd = struct.pack('Q', value).decode('utf-16')
+            # s = ('{0:0=%dX}' % (self.bits/4)).format(value)
+            # a = [(chr(int(s[i:i+2],16)) + chr(int(s[i+2:i+4],16))).decode('utf-16') for i in range(0, len(s), 4)]
             attr = self.attrs['uval']
         if self.align == 'right':
             self.win.addstr(row, self.num_cols() - self.padding['right'] - self.padding['label'] - len(fmtd) - 2, fmtd, attr)
@@ -227,44 +235,37 @@ class CalculonDisplay (object):
                 self.win.addstr(row, self.num_cols() - self.padding['right'] - len(label), label, self.attrs['vallabel'])
 
     def draw_binary(self):
-        s = BASE_FMT['b'].format(self.vars['_'])
+        s = (BASE_FMT['b'] % self.bits).format(self.vars['_'])
+        if len(s) > self.bits:
+            s = s[len(s)-self.bits:]
         y = len(self.get_value_formats()) + self.padding['top'] + self.padding['bintop']
         x = self.padding['left']
         p = 0
-        if self.bin_mode == 'narrow':
-            left = ['63', '47', '31', '15']
-            right = ['48', '32', '16', '0']
-            for i in range(4):
-                self.win.addstr(y + i, self.padding['left'], left[i], self.attrs['binlabel'])
-                self.win.addstr(y + i, self.num_cols() - self.padding['right'] - 2, right[i], self.attrs['binlabel'])
-            for i in xrange(len(s)):
-                if i != 0 and i % 16 == 0:
-                    y += 1
-                    x = self.padding['left']
-                    p = 0
-                elif i != 0 and i % 8 == 0:
-                    p += 3
-                elif i != 0 and i % 4 == 0:
-                    p += 1
-                x += 1
-                self.win.addstr(y, x*2+p, s[i], self.attrs['bval'])
-        elif self.bin_mode == 'wide':
-            left = ['63', '31']
-            right = ['32', '0']
-            for i in range(2):
-                self.win.addstr(y + i, self.padding['left'], left[i], self.attrs['binlabel'])
-                self.win.addstr(y + i, self.num_cols() - self.padding['right'] - 2, right[i], self.attrs['binlabel'])
-            for i in xrange(len(s)):
-                if i != 0 and i % 32 == 0:
-                    y += 1
-                    x = self.padding['left']
-                    p = 0
-                elif i != 0 and i % 8 == 0:
-                    p += 3
-                elif i != 0 and i % 4 == 0:
-                    p += 1
-                x += 1
-                self.win.addstr(y, x*2+p, s[i], self.attrs['bval'])
+        if self.vars['_'] >= 1<<self.bits:
+            attr = self.attrs['err']
+        else:
+            attr = self.attrs['bval']
+        for i in xrange(len(s)):
+            if i != 0 and i % self.bin_row == 0:
+                y += 1
+                x = self.padding['left']
+                p = 0
+            elif i != 0 and i % 8 == 0:
+                p += 3
+            elif i != 0 and i % 4 == 0:
+                p += 1
+            x += 1
+            self.win.addstr(y, x*2+p, s[i], attr)
+
+    def draw_binary_labels(self):
+        rows = range(self.bits / self.bin_row)
+        y = self.offset_bin() + self.padding['bintop'] + len(rows) - 1
+        for i in rows:
+            right = str(i * self.bin_row)
+            left = str((i+1) * self.bin_row - 1)
+            self.win.addstr(y, self.padding['left'], left, self.attrs['binlabel'])
+            self.win.addstr(y, self.num_cols() - self.padding['right'] - 2, right, self.attrs['binlabel'])
+            y -= 1
 
     def draw_vars(self):
         y = self.offset_vars() + self.padding['vartop']
