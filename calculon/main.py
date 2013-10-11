@@ -16,6 +16,7 @@ import bpython.repl
 from bpython.cli import *
 
 from .display import CalculonDisplay
+from .voltron_integration import load_voltron
 
 disp = None
 last_result = None
@@ -113,6 +114,7 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
         self.locals['vars'] = disp.vars
         self.locals['repl'] = repl
         self.locals['disp'] = disp
+        load_voltron(self.locals)
 
     # update value from last operation
     try:
@@ -165,7 +167,7 @@ def main():
     bpython.cli.CLIRepl = CalculonRepl
 
     # disable autocomplete, otherwise it appears over the main display
-    # might fix this later and add a config option to enable/disable 
+    # might fix this later and add a config option to enable/disable
     bpython.repl.Repl.complete = lambda s, m: None
 
     # run the bpython repl
