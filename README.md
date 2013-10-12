@@ -8,7 +8,9 @@ I haven't found many decent programmer's calculators for Mac and I spend a fair 
 
 [![calculon example](http://i.imgur.com/SkWdnld.png)](#example)
 
-Calculon is basically a curses window tacked onto `bpython`. Type python code into the `bpython` prompt, and any sane numeric values that come out will be displayed. At this stage it's barely working, let alone complete.
+[![calculon example2](http://ho.ax/posts/2013/10/calculon_wide.png)](#example2)
+
+Calculon is basically a curses window tacked onto `bpython`. Type python code into the `bpython` prompt, and any sane numeric values that come out will be displayed.
 
 Dependencies
 ------------
@@ -48,3 +50,15 @@ Now when these variables are updated:
 Their values will be tracked. Variables can be removed from this display with the `unwatch()` function:
 
 	>>> unwatch("somevar")
+
+Calculon now has support to connect to [voltron](https://github.com/snarez/voltron) and inspect register state. If you have the most recent version of calculon and voltron, and voltron is running, calculon will connect to it at startup. Calculon can manually connect and disconnect from voltron as follows:
+	
+	>>> V.connect()
+	Connected to voltron
+	>>> V.disconnect()
+	Disconnected from voltron
+
+When connected to voltron, calculon can inspect registers:
+
+	>>> V.rip
+	4294971201
