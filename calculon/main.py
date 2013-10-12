@@ -19,7 +19,7 @@ from bpython._py3compat import py3
 from bpython.cli import *
 
 from .display import CalculonDisplay
-from .voltron_integration import load_voltron
+from .voltron_integration import VoltronProxy
 
 disp = None
 last_result = None
@@ -263,7 +263,9 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
         self.locals['vars'] = disp.vars
         self.locals['repl'] = repl
         self.locals['disp'] = disp
-        load_voltron(self.locals)
+        proxy = VoltronProxy()
+        if proxy:
+            self.locals['V'] = proxy
 
     # update value from last operation
     try:
