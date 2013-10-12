@@ -290,16 +290,22 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
 
 
 def watch(varname, format='h'):
-    disp.watch_var(varname, format)
-    bpython.cli.do_resize(repl)
-    repl.redraw()
-    disp.redraw()
+    if type(varname) is str:
+        disp.watch_var(varname, format)
+        bpython.cli.do_resize(repl)
+        repl.redraw()
+        disp.redraw()
+    else:
+        print("Specify variable name as a string")
 
 
 def unwatch(varname, format='h'):
-    disp.unwatch_var(varname)
-    bpython.cli.do_resize(repl)
-    disp.redraw()
+    if type(varname) is str:
+        disp.unwatch_var(varname)
+        bpython.cli.do_resize(repl)
+        disp.redraw()
+    else:
+        print("Specify variable name as a string")
 
 
 def constant_factory(value):
