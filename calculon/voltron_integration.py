@@ -31,14 +31,16 @@ def load_voltron(locals):
     if voltron is None:
         return
 
-    print("Loading voltron")
     proxy = None
     try:
         proxy = VoltronProxy()
+    except socket.error, e:
+        pass
     except Exception, e:
         print("Error loading voltron: " + str(e))
         print("Make sure you have the most recent version of voltron")
     if proxy and proxy.connected:
+        print("Connected to voltron")
         locals['V'] = proxy
     else:
         return None
