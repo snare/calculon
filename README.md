@@ -1,7 +1,7 @@
 calculon
 ========
 
-A bpython-based programmer's calculator 
+A bpython-based programmer's calculator
 ---------------------------------------
 
 I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a python REPL, so I figured I'd have a go at writing a quick terminal-based calculator using curses.
@@ -52,7 +52,7 @@ Their values will be tracked. Variables can be removed from this display with th
 	>>> unwatch("somevar")
 
 Calculon now has support to connect to [voltron](https://github.com/snarez/voltron) and inspect register state. If you have the most recent version of calculon and voltron, and voltron is running, calculon will connect to it at startup. Calculon can manually connect and disconnect from voltron as follows:
-	
+
 	>>> V.connect()
 	Connected to voltron
 	>>> V.disconnect()
@@ -62,3 +62,13 @@ When connected to voltron, calculon can inspect registers:
 
 	>>> V.rip
 	4294971201
+
+Or look at memory:
+
+    >>> V[V.rbp]
+    'x'
+
+Or a region in memory:
+
+    >>> V[V.rbp:V.rbp + 32]
+    'x\xee\xbf_\xff\x7f\x00\x00\xfd\xf5\xad\x85\xff\x7f\x00\x00'
