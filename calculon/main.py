@@ -8,11 +8,15 @@ import code
 from collections import defaultdict
 import itertools
 import types
+import os
 
 import bpython
 import bpython.cli
 import bpython.args
 import bpython.repl
+from bpython.config import Struct
+from bpython._py3compat import py3
+from bpython.cli import *
 
 from .display import CalculonDisplay
 from .voltron_integration import load_voltron
@@ -40,6 +44,152 @@ class CalculonRepl (bpython.cli.CLIRepl):
         self.statusbar.resize(refresh=False)
         self.redraw()
         disp.redraw()
+
+    # Sux to have to copy this method in here, but it's the easiest way to fix the list window position
+    def show_list(self, items, topline=None, current_item=None):
+        shared = Struct()
+        shared.cols = 0
+        shared.rows = 0
+        shared.wl = 0
+        y, x = self.scr.getyx()
+        # offset y by the height of the calculon display. this is the only thing added to this function.
+        y += disp.num_rows()
+        h, w = self.scr.getmaxyx()
+        down = (y < h // 2)
+        if down:
+            max_h = h - y
+        else:
+            max_h = y + 1
+        max_w = int(w * self.config.cli_suggestion_width)
+        self.list_win.erase()
+        if items:
+            sep = '.'
+            if os.path.sep in items[0]:
+                # Filename completion
+                sep = os.path.sep
+            if sep in items[0]:
+                items = [x.rstrip(sep).rsplit(sep)[-1] for x in items]
+                if current_item:
+                    current_item = current_item.rstrip(sep).rsplit(sep)[-1]
+
+        if topline:
+            height_offset = self.mkargspec(topline, down) + 1
+        else:
+            height_offset = 0
+
+        def lsize():
+            wl = max(len(i) for i in v_items) + 1
+            if not wl:
+                wl = 1
+            cols = ((max_w - 2) // wl) or 1
+            rows = len(v_items) // cols
+
+            if cols * rows < len(v_items):
+                rows += 1
+
+            if rows + 2 >= max_h:
+                rows = max_h - 2
+                return False
+
+            shared.rows = rows
+            shared.cols = cols
+            shared.wl = wl
+            return True
+
+        if items:
+            # visible items (we'll append until we can't fit any more in)
+            v_items = [items[0][:max_w - 3]]
+            lsize()
+        else:
+            v_items = []
+
+        for i in items[1:]:
+            v_items.append(i[:max_w - 3])
+            if not lsize():
+                del v_items[-1]
+                v_items[-1] = '...'
+                break
+
+        rows = shared.rows
+        if rows + height_offset < max_h:
+            rows += height_offset
+            display_rows = rows
+        else:
+            display_rows = rows + height_offset
+
+        cols = shared.cols
+        wl = shared.wl
+
+        if topline and not v_items:
+            w = max_w
+        elif wl + 3 > max_w:
+            w = max_w
+        else:
+            t = (cols + 1) * wl + 3
+            if t > max_w:
+                t = max_w
+            w = t
+
+        if height_offset and display_rows + 5 >= max_h:
+            del v_items[-(cols * (height_offset)):]
+
+        if self.docstring is None:
+            self.list_win.resize(rows + 2, w)
+        else:
+            docstring = self.format_docstring(self.docstring, max_w - 2,
+                max_h - height_offset)
+            docstring_string = ''.join(docstring)
+            rows += len(docstring)
+            self.list_win.resize(rows, max_w)
+
+        if down:
+            self.list_win.mvwin(y + 1, 0)
+        else:
+            self.list_win.mvwin(y - rows - 2, 0)
+
+        if v_items:
+            self.list_win.addstr('\n ')
+
+        if not py3:
+            encoding = getpreferredencoding()
+        for ix, i in enumerate(v_items):
+            padding = (wl - len(i)) * ' '
+            if i == current_item:
+                color = get_colpair(self.config, 'operator')
+            else:
+                color = get_colpair(self.config, 'main')
+            if not py3:
+                i = i.encode(encoding)
+            self.list_win.addstr(i + padding, color)
+            if ((cols == 1 or (ix and not (ix + 1) % cols))
+                    and ix + 1 < len(v_items)):
+                self.list_win.addstr('\n ')
+
+        if self.docstring is not None:
+            if not py3 and isinstance(docstring_string, unicode):
+                docstring_string = docstring_string.encode(encoding, 'ignore')
+            self.list_win.addstr('\n' + docstring_string,
+                                 get_colpair(self.config, 'comment'))
+            # XXX: After all the trouble I had with sizing the list box (I'm not very good
+            # at that type of thing) I decided to do this bit of tidying up here just to
+            # make sure there's no unnececessary blank lines, it makes things look nicer.
+
+        y = self.list_win.getyx()[0]
+        self.list_win.resize(y + 2, w)
+
+        self.statusbar.win.touchwin()
+        self.statusbar.win.noutrefresh()
+        self.list_win.attron(get_colpair(self.config, 'main'))
+        self.list_win.border()
+        self.scr.touchwin()
+        self.scr.cursyncup()
+        self.scr.noutrefresh()
+
+        # This looks a little odd, but I can't figure a better way to stick the cursor
+        # back where it belongs (refreshing the window hides the list_win)
+
+        self.scr.move(*self.scr.getyx())
+        self.list_win.refresh()
 
 
 def init_wins(scr, config):
@@ -164,10 +314,6 @@ def main():
     bpython.cli.init_wins = init_wins
     bpython.repl.Interpreter.runsource = runsource
     bpython.cli.CLIRepl = CalculonRepl
-
-    # disable autocomplete, otherwise it appears over the main display
-    # might fix this later and add a config option to enable/disable
-    bpython.repl.Repl.complete = lambda s, m: None
 
     # run the bpython repl
     bpython.cli.main()
