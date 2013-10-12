@@ -33,6 +33,24 @@ class VoltronProxy(object):
         else:
             raise Exception("Not connected")
 
+    def __getitem__(self, key):
+        if self.connected:
+            if isinstance(key, slice):
+                resp = self.client.query({'msg_type': 'interactive',
+                    'query': 'get_memory',
+                    'start': key.start,
+                    "end": key.stop})
+            else:
+                resp = self.client.query({'msg_type': 'interactive',
+                    'query': 'get_memory',
+                    'start': key,
+                    "end": key + 1})
+
+            return resp['value']
+        else:
+            raise Exception("Not connected")
+
+
     def connect(self):
         if not self.connected:
             try:
