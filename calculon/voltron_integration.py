@@ -10,7 +10,8 @@ except ImportError:
 
 class VoltronProxy(object):
     config = {
-        'type': 'interactive'
+        'type': 'interactive',
+        'update_on': 'interactive',
     }
 
     def __new__(cls, *args, **kwargs):
