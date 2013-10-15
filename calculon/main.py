@@ -19,6 +19,7 @@ from bpython._py3compat import py3
 from bpython.cli import *
 
 from .display import CalculonDisplay
+from .env import CONFIG
 from .voltron_integration import VoltronProxy
 
 disp = None
@@ -322,6 +323,9 @@ def main():
     bpython.cli.init_wins = init_wins
     bpython.repl.Interpreter.runsource = runsource
     bpython.cli.CLIRepl = CalculonRepl
+
+    if 'autocomplete' in CONFIG and not CONFIG['autocomplete']:
+        bpython.repl.Repl.complete = lambda s, m: None
 
     # run the bpython repl
     bpython.cli.main()
