@@ -28,6 +28,17 @@ CURSES_ATTRS = {
     "underline": curses.A_UNDERLINE,
 }
 
+CURSES_COLOURS = {
+    "black" : curses.COLOR_BLACK,
+    "blue" : curses.COLOR_BLUE,
+    "cyan" : curses.COLOR_CYAN,
+    "green" : curses.COLOR_GREEN,
+    "magenta" : curses.COLOR_MAGENTA,
+    "red" : curses.COLOR_RED,
+    "white" : curses.COLOR_WHITE,
+    "yellow" : curses.COLOR_YELLOW
+}
+
 VALID_FORMATS = ['h','d','o','a','u','b']
 
 class CalculonDisplay (object):
@@ -58,11 +69,24 @@ class CalculonDisplay (object):
 
     def init_config(self, config):
         # update curses text attributes
+        colour_pairs = {}
+        # Fixme - pull this from curses module (max number of colour pairs)
+        last_colour_pair = curses.COLOR_PAIRS
         for sec in config['attrs']:
             attrs = 0
             for attr in config['attrs'][sec]['attrs']:
                 attrs |= CURSES_ATTRS[attr]
-            attrs |= curses.color_pair(config['attrs'][sec]['colour_pair'])
+            colours = config['attrs'][sec].get('colours')
+            if colours and len(colours) >= 2:
+                # JSON doesn't support tuples, lists can't be hashed, this is hacky
+                colours = tuple(colours)
+                if colours not in colour_pairs:
+                    curses.init_pair(last_colour_pair,
+                                     CURSES_COLOURS[colours[0].lower()],
+                                     CURSES_COLOURS[colours[1].lower()])
+                    colour_pairs[colours] = last_colour_pair
+                    last_colour_pair -= 1
+                attrs |= curses.color_pair(colour_pairs[colours])
             config['attrs'][sec] = attrs
 
         # round up bits to nearest row
