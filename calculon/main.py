@@ -15,8 +15,9 @@ import bpython.cli
 import bpython.args
 import bpython.repl
 from bpython.config import Struct
-from bpython._py3compat import py3
 from bpython.cli import *
+
+py3 = (sys.version_info[0] == 3)
 
 from .display import CalculonDisplay
 from .env import CONFIG
