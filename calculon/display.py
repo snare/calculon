@@ -36,7 +36,8 @@ CURSES_COLOURS = {
     "magenta" : curses.COLOR_MAGENTA,
     "red" : curses.COLOR_RED,
     "white" : curses.COLOR_WHITE,
-    "yellow" : curses.COLOR_YELLOW
+    "yellow" : curses.COLOR_YELLOW,
+    "none" : -1
 }
 
 VALID_FORMATS = ['h','d','o','a','u','b']
@@ -71,7 +72,7 @@ class CalculonDisplay (object):
         # update curses text attributes
         colour_pairs = {}
         # Fixme - pull this from curses module (max number of colour pairs)
-        last_colour_pair = curses.COLOR_PAIRS
+        last_colour_pair = min(curses.COLOR_PAIRS, 64)
         for sec in config['attrs']:
             attrs = 0
             for attr in config['attrs'][sec]['attrs']:
