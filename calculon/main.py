@@ -10,6 +10,8 @@ import itertools
 import types
 import os
 
+import tokenize, token
+
 import bpython
 import bpython.cli
 import bpython.args
@@ -231,10 +233,11 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
     global disp, last_result, last_line, repl
 
     # if the code starts with an operator, prepend the _ variable
-    for op in ['-','+','*','/','^','|','&','<','>']:
-        if source.startswith(op):
+    tokens = tokenize.generate_tokens(lambda: source)
+    for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
+        if tokenType == token.OP:
             source = '_ ' + source
-            break
+        break
 
     # if we got an empty source line, re-evaluate the last line
     if len(source) == 0:
