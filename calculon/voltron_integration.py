@@ -59,7 +59,7 @@ class VoltronProxy(object):
                 self.connected = True
                 print("Connected to voltron")
             except socket.error, e:
-                print("Failed to connect to voltron")
+                pass
             except Exception, e:
                 print("Error loading voltron: " + str(e))
                 print("Make sure you have the most recent version of voltron")

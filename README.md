@@ -10,12 +10,18 @@ I haven't found many decent programmer's calculators for Mac and I spend a fair 
 
 [![calculon example2](http://ho.ax/posts/2013/10/calculon_wide.png)](#example2)
 
-Calculon is basically a curses window tacked onto `bpython`. Type python code into the `bpython` prompt, and any sane numeric values that come out will be displayed.
+Calculon supports two modes of operation - 'integrated' and 'decoupled'. When run in integrated mode (the default), the display and an embedded REPL are displayed in a single terminal session. The embedded REPL is a standard Python console provided by the `code` module. Decoupled mode allows you to run the display and REPL in different terminal sessions. The advantage of this mode is that you can also use `bpython` (or possibly other REPLs with some hacking) as the REPL to talk to the `calculon` display.
+
+Note: Since decoupling front and back ends, only the decoupled mode works. Integrated mode is coming, so stick with the old version if you want to use that mode.
 
 Dependencies
 ------------
 
-Requires `bpython`.
+There are no dependencies to use `calculon` in integrated mode with the display and embedded REPL in one terminal.
+
+Decoupled mode, with the display and REPL running in individual terminal sessions, requires the `Pyro4` module.
+
+To use `bpython` as the REPL will obviously require that `bpython` is installed.
 
 Installation
 ------------
@@ -33,11 +39,31 @@ An example config (`example.cfg`) is included with the source. Copy it to `~/.ca
 Usage
 -----
 
+To run `calculon` in integrated mode:
+
 	$ calculon
 
-Totally doesn't support any command line args yet.
+To run the display in decoupled mode:
 
-The REPL prompt is basically just `bpython`, so any python code will work. Calculon adds some top level functions for watching variables. calling the `watch()` function with a variable name (and optional output format) will add the named variable to the variable display below the binary display.
+	$ calculon display
+
+To run the embedded REPL in decoupled mode:
+
+	$ calculon console
+
+To connect to the display from within a `bpython` instance:
+
+	$ bpython
+	>>> import calculon
+
+From here, any Python code entered into the REPL that results in a numeric value will be rendered in the display. For example:
+
+	>>> 1234 + 1234
+	2468
+
+2468 will be rendered in the display.
+
+Calculon adds some top level functions to the REPL for watching variables. Calling the `watch()` function with a variable name (and optional output format) will add the named variable to the variable display below the binary display.
 
 	>>> watch("somevar")
 	>>> watch("anothervar", "d")
@@ -63,12 +89,9 @@ When connected to voltron, calculon can inspect registers:
 	>>> V.rip
 	4294971201
 
-Or look at memory:
+Or memory:
 
     >>> V[V.rbp]
     'x'
-
-Or a region in memory:
-
     >>> V[V.rbp:V.rbp + 32]
     'x\xee\xbf_\xff\x7f\x00\x00\xfd\xf5\xad\x85\xff\x7f\x00\x00'
