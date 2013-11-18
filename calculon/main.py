@@ -233,6 +233,7 @@ def runsource(self, source, filename='<input>', symbol='single', encode=True):
     global disp, last_result, last_line, repl
 
     # if the code starts with an operator, prepend the _ variable
+    tokens = tokenize.generate_tokens(lambda: source)
     for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
         if tokenType == token.OP:
             source = '_ ' + source
