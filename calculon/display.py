@@ -2,6 +2,7 @@ import sys
 import curses
 import string
 import struct
+import atexit
 
 from .env import CONFIG
 
@@ -45,12 +46,13 @@ VALID_FORMATS = ['h','d','o','a','u','b']
 class CalculonDisplay (object):
     def __init__(self):
         self.scr = curses.initscr()
+        atexit.register(curses.endwin)
         curses.start_color()
 
         self.config = self.init_config(CONFIG)
         self.bin_mode = self.config['bin_mode']
-        self.bin_row = self.config['bin_row'] 
-        self.bits = self.config['bits'] 
+        self.bin_row = self.config['bin_row']
+        self.bits = self.config['bits']
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
