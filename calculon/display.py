@@ -51,8 +51,8 @@ class CalculonDisplay (object):
 
         self.config = self.init_config(CONFIG)
         self.bin_mode = self.config['bin_mode']
-        self.bin_row = self.config['bin_row'] 
-        self.bits = self.config['bits'] 
+        self.bin_row = self.config['bin_row']
+        self.bits = self.config['bits']
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
