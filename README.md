@@ -1,10 +1,10 @@
 calculon
 ========
 
-A bpython-based programmer's calculator
----------------------------------------
+A terminal-based programmer's calculator
+----------------------------------------
 
-I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a python REPL, so I figured I'd have a go at writing a quick terminal-based calculator using curses.
+I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a Python REPL, so I figured I'd have a go at writing a quick terminal-based calculator in Python.
 
 [![calculon example](http://i.imgur.com/SkWdnld.png)](#example)
 
@@ -12,16 +12,12 @@ I haven't found many decent programmer's calculators for Mac and I spend a fair 
 
 Calculon supports two modes of operation - 'integrated' and 'decoupled'. When run in integrated mode (the default), the display and an embedded REPL are displayed in a single terminal session. The embedded REPL is a standard Python console provided by the `code` module. Decoupled mode allows you to run the display and REPL in different terminal sessions. The advantage of this mode is that you can also use `bpython` (or possibly other REPLs with some hacking) as the REPL to talk to the `calculon` display.
 
-Note: Since decoupling front and back ends, only the decoupled mode works. Integrated mode is coming, so stick with the old version if you want to use that mode.
-
 Dependencies
 ------------
 
-There are no dependencies to use `calculon` in integrated mode with the display and embedded REPL in one terminal.
+Calculon requires the `Pyro4`, `blessings` and `rl` modules. They will be automatically installed by the `setup.py` script.
 
-Decoupled mode, with the display and REPL running in individual terminal sessions, requires the `Pyro4` module.
-
-To use `bpython` as the REPL will obviously require that `bpython` is installed.
+To use `bpython` as the REPL you will obviously have to have `bpython` installed.
 
 Installation
 ------------
@@ -54,7 +50,7 @@ To run the embedded REPL in decoupled mode:
 To connect to the display from within a `bpython` instance:
 
 	$ bpython
-	>>> import calculon
+	>>> import calculon.load
 
 From here, any Python code entered into the REPL that results in a numeric value will be rendered in the display. For example:
 
