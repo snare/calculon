@@ -91,3 +91,8 @@ Or memory:
     'x'
     >>> V[V.rbp:V.rbp + 32]
     'x\xee\xbf_\xff\x7f\x00\x00\xfd\xf5\xad\x85\xff\x7f\x00\x00'
+
+
+Credits
+-------
+[richo](https://github.com/richo) deserves many beers for his efforts
