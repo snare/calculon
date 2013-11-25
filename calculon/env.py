@@ -24,13 +24,19 @@ class Environment(object):
 
         # init files
         for name in self.spec['files']:
-            # get spec for file, update file path
             fspec = self.spec['files'][name]
+
+            # add filename if one isn't provided
             if 'name' not in fspec:
                 fspec['name'] = name
             if 'var' in fspec and fspec['var'] in os.environ:
                 fspec['name'] = os.environ[fspec['var']]
-            fspec['path'] = os.path.join(self.dir, fspec['name'])
+
+            # if environment var exists, override path
+            if 'var' in fspec and fspec['var'] in os.environ:
+                fspec['path'] = os.environ[fspec['var']]
+            else:
+                fspec['path'] = os.path.join(self.dir, fspec['name'])
 
             # substitute basename
             if self.basename:
@@ -38,6 +44,12 @@ class Environment(object):
 
             # store updated spec
             self.spec['files'][name] = fspec
+
+            # create file
+            if 'create' in fspec and fspec['create']:
+                if not os.path.isfile(fspec['path']):
+                    f = open(fspec['path'], 'w+')
+                    f.close()
 
             # load file
             if 'read' in fspec and fspec['read']:
@@ -111,15 +123,14 @@ class Environment(object):
         else:
             spec = {'name': name, 'type': 'raw', 'path': os.path.join(self.dir, name)}
 
-        # remove the file if we're not appending
+        # open file
+        f = open(spec['path'], 'w+')
+
+        # truncate the file if we're not appending
         if not 'append' in spec or 'append' in spec and not spec['append']:
-            try:
-                os.remove(spec['path'])
-            except:
-                pass
+            f.truncate()
 
         # write file
-        f = open(spec['path'], 'w')
         f.write(data)
         f.close()
 
@@ -136,15 +147,11 @@ ENV = Environment({
             'default':  'config/default.cfg',
             'read':     True
         },
-        'socket': {
-            'name':     '{basename}.sock',
-            'type':     'socket',
-            'read':     False,
-            'var':      'CALCULON_SOCKET'
-        },
         'uri': {
             'type':     'raw',
-            'read':     True
+            'read':     True,
+            'create':   True,
+            'var':      'CALCULON_URI'
         }
     },
     'basename': 'calculon'
