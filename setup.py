@@ -10,7 +10,7 @@ setup(
     keywords = "calculator programmer hex 64-bit",
     url = "https://github.com/snarez/calculon",
     packages=['calculon'],
-    install_requires = [],
+    install_requires = ['rl', 'Pyro4', 'blessings'],
     package_data = {'calculon': ['config/*']},
     install_package_data = True,
     entry_points = {'console_scripts': ['calculon = calculon:main']},

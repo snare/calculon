@@ -1,10 +1,11 @@
 import sys
-import curses
 import string
 import struct
-import atexit
+import Pyro4
+import os
+from blessings import Terminal
 
-from .env import CONFIG
+from .env import *
 
 BIN_MODE_WIDTH_WIDE = 84
 BIN_MODE_WIDTH_NARROW = 44
@@ -18,41 +19,26 @@ BASE_FMT = {
     'b': '{:0=%db}'
 }
 
-CURSES_ATTRS = {
-    "altcharset": curses.A_ALTCHARSET,
-    "blink": curses.A_BLINK,
-    "bold": curses.A_BOLD,
-    "dim": curses.A_DIM,
-    "normal": curses.A_NORMAL,
-    "reverse": curses.A_REVERSE,
-    "standout": curses.A_STANDOUT,
-    "underline": curses.A_UNDERLINE,
-}
-
-CURSES_COLOURS = {
-    "black" : curses.COLOR_BLACK,
-    "blue" : curses.COLOR_BLUE,
-    "cyan" : curses.COLOR_CYAN,
-    "green" : curses.COLOR_GREEN,
-    "magenta" : curses.COLOR_MAGENTA,
-    "red" : curses.COLOR_RED,
-    "white" : curses.COLOR_WHITE,
-    "yellow" : curses.COLOR_YELLOW,
-    "none" : 0
-}
-
 VALID_FORMATS = ['h','d','o','a','u','b']
+
+# this kinda sucks, maybe do it without system
+class HiddenCursor(object):
+    def __enter__(self):
+        os.system('tput civis')
+        
+    def __exit__(self, type, value, traceback):
+        os.system('tput cnorm')
+
 
 class CalculonDisplay (object):
     def __init__(self):
-        self.scr = curses.initscr()
-        atexit.register(curses.endwin)
-        curses.start_color()
+        self.term = Terminal()
+        print(self.term.enter_fullscreen())
 
         self.config = self.init_config(CONFIG)
         self.bin_mode = self.config['bin_mode']
-        self.bin_row = self.config['bin_row']
-        self.bits = self.config['bits']
+        self.bin_row = self.config['bin_row'] 
+        self.bits = self.config['bits'] 
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
@@ -69,33 +55,16 @@ class CalculonDisplay (object):
             'header': True, 'value': True, 'vallabel': True, 'binlabel': True,
             'varlabel': True, 'varvalue': True, 'all': True
         }
+
         for var in self.config['variables']:
             self.watch_var(var, self.config['variables'][var]['format'])
-
-        h, w = self.scr.getmaxyx()
-        win = curses.newwin(self.num_rows(), w, 0, 0)
-        win.keypad(1)
-        self.set_win(win, win)
-        curses.curs_set(0)
 
         self.update_value(0)
 
     def init_config(self, config):
-        # update curses text attributes
-        colour_pairs = {}
-        cp = 1
+        # update text attributes
         for sec in config['attrs']:
-            attrs = 0
-            for attr in config['attrs'][sec]['attrs']:
-                attrs |= CURSES_ATTRS[attr]
-            colours = tuple(config['attrs'][sec].get('colours'))
-            if colours and len(colours) >= 2:
-                if colours not in colour_pairs:
-                    curses.init_pair(cp, CURSES_COLOURS[colours[0].lower()], CURSES_COLOURS[colours[1].lower()])
-                    colour_pairs[colours] = cp
-                    cp += 1
-                attrs |= curses.color_pair(colour_pairs[colours])
-            config['attrs'][sec] = attrs
+            config['attrs'][sec] = ''.join(['{t.' + x + '}' for x in config['attrs'][sec]])
 
         # round up bits to nearest row
         config['bin_row'] = BIN_MODE_ROW_NARROW if config['bin_mode'] == "narrow" else BIN_MODE_ROW_WIDE
@@ -139,9 +108,6 @@ class CalculonDisplay (object):
         return self.var_names
 
     def redraw(self, all=False):
-        self.resize()
-        if self.draw_state['all']:
-            self.win.clear()
         if self.draw_state['header'] or self.draw_state['all']:
             self.draw_header()
             self.draw_state['header'] = False
@@ -161,13 +127,6 @@ class CalculonDisplay (object):
             self.draw_vars()
             self.draw_state['varvalue'] = False
         self.draw_state['all'] = False
-        self.win.refresh()
-        self.repl_win.refresh()
-
-    def resize(self):
-        self.win.resize(self.num_rows(), self.num_cols())
-        self.win.refresh()
-        self.repl_win.refresh()
 
     def get_value_formats(self):
         return filter(lambda x: x in VALID_FORMATS and x != 'b', self.formats)
@@ -203,10 +162,13 @@ class CalculonDisplay (object):
     def offset_vars(self):
         return self.offset_bin() + self.num_rows_bin()
 
+    def draw_str(self, str, attr='', x=0, y=0):
+        print((self.term.normal + self.term.move(y, x) + attr + str).format(t=self.term))
+
     def draw_header(self):
         if self.show_header:
             head = self.header + ' ' * (self.num_cols() - len(self.header))
-            self.win.addstr(0, 0, head, self.attrs['header'])
+            self.draw_str(head, self.attrs['header'])
 
     def clear_value(self, varname=None):
         y = self.padding['top']
@@ -217,7 +179,7 @@ class CalculonDisplay (object):
                 w -= len(varname)
                 if self.align == 'right':
                     x += len(varname)
-            self.win.addstr(y, x, ' '*w)
+            self.draw_str(' '*w, '', x, y)
             y += 1
 
     def draw_value(self, varname=None):
@@ -245,9 +207,11 @@ class CalculonDisplay (object):
             # a = [(chr(int(s[i:i+2],16)) + chr(int(s[i+2:i+4],16))).decode('utf-16') for i in range(0, len(s), 4)]
             attr = self.attrs['uval']
         if self.align == 'right':
-            self.win.addstr(row, self.num_cols() - self.padding['right'] - self.padding['label'] - len(fmtd) - 2, fmtd, attr)
+            col = self.num_cols() - self.padding['right'] - self.padding['label'] - len(fmtd) - 2
+            self.draw_str(fmtd, attr, col, row)
         elif self.align == 'left':
-            self.win.addstr(row, self.padding['left'] + len(' ' + fmt) + self.padding['label'], fmtd, attr)
+            col = self.padding['left'] + len(' ' + fmt) + self.padding['label']
+            self.draw_str(fmtd, attr, col, row)
 
     def draw_value_labels(self):
         y = self.padding['top']
@@ -257,13 +221,15 @@ class CalculonDisplay (object):
 
     def draw_labels_at_row(self, fmt, row, label=None):
         if self.align == 'right':
-            self.win.addstr(row, self.num_cols() - self.padding['right'] - self.padding['label'], fmt, self.attrs['vallabel'])
+            col = self.num_cols() - self.padding['right'] - self.padding['label']
+            self.draw_str(fmt, self.attrs['vallabel'], col, row)
             if label != None:
-                self.win.addstr(row, self.padding['left'], label, self.attrs['vallabel'])
+                self.draw_str(label, self.attrs['vallabel'], self.padding['left'], row)
         elif self.align == 'left':
-            self.win.addstr(row, self.padding['left'], ' ' + fmt, self.attrs['vallabel'])
+            col = self.padding['left']
+            self.draw_str(fmt, self.attrs['vallabel'], col, row)
             if label != None:
-                self.win.addstr(row, self.num_cols() - self.padding['right'] - len(label), label, self.attrs['vallabel'])
+                self.draw_str(label, self.attrs['vallabel'], self.num_cols() - self.padding['right'] - len(label), row)
 
     def draw_binary(self):
         s = (BASE_FMT['b'] % self.bits).format(self.vars['_'])
@@ -286,7 +252,7 @@ class CalculonDisplay (object):
             elif i != 0 and i % 4 == 0:
                 p += 1
             x += 1
-            self.win.addstr(y, x*2+p, s[i], attr)
+            self.draw_str(s[i], attr, x*2+p, y)
 
     def draw_binary_labels(self):
         rows = range(self.bits / self.bin_row)
@@ -294,8 +260,8 @@ class CalculonDisplay (object):
         for i in rows:
             right = str(i * self.bin_row)
             left = str((i+1) * self.bin_row - 1)
-            self.win.addstr(y, self.padding['left'], left, self.attrs['binlabel'])
-            self.win.addstr(y, self.num_cols() - self.padding['right'] - 2, right, self.attrs['binlabel'])
+            self.draw_str(left, self.attrs['binlabel'], self.padding['left'], y)
+            self.draw_str(right, self.attrs['binlabel'], self.num_cols() - self.padding['right'] - 2, y)
             y -= 1
 
     def draw_vars(self):

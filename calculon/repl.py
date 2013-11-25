@@ -4,28 +4,34 @@ import code
 import os
 import tokenize, token
 import sys
+import Pyro4
 from collections import defaultdict
 
 from .colour import *
 from .env import *
 from .voltron_integration import VoltronProxy
 
-CALCULON_HISTORY = os.path.join(CALCULON_DIR, 'history')
+CALCULON_HISTORY = os.path.join(ENV['dir'], 'history')
+
+def constant_factory(value):
+    return itertools.repeat(value).next
 
 disp = None
 last_result = defaultdict(constant_factory(None))
 last_line = ""
 repl = None
 
+
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
         global disp, last_result, last_line, repl
 
         # if the code starts with an operator, prepend the _ variable
-        for op in ['-','+','*','/','^','|','&','<','>']:
-            if source.startswith(op):
+        tokens = tokenize.generate_tokens(lambda: source)
+        for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
+            if tokenType == token.OP:
                 source = '_ ' + source
-                break
+            break
 
         # if we got an empty source line, re-evaluate the last line
         if len(source) == 0:
@@ -74,6 +80,57 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 pass
 
         return False
+
+
+class Repl(object):
+    def __init__(self, scr, offset=0):
+        # set up windows
+        self.scr = scr
+        h,w = self.scr.getmaxyx()
+        self.win = curses.newwin(h - 1 - offset, w, offset, 0)
+        self.win.scrollok(True)
+        self.win.keypad(1)
+
+        # set up line editor
+        # rl.history.read_file(CONSOLE_HISTORY)
+        self.lastbuf = None
+
+        # create interpreter object
+        self.interp = code.InteractiveInterpreter()
+
+        # set prompt
+        self.update_prompt()
+
+
+    def run(self):
+        while 1:
+            # read the next line
+            try:
+                line = raw_input(self.prompt.encode(sys.stdout.encoding))
+            except EOFError:
+                break
+            self.interp.runsource(line)
+            rl.readline.write_history_file(CALCULON_HISTORY)
+
+    def update_prompt(self):
+        self.prompt = self.process_prompt(CONFIG['prompt'])
+
+    def process_prompt(self, prompt):
+        return self.escape_prompt(prompt['format'].format(**FMT_ESCAPES))
+
+    def escape_prompt(self, prompt, start = "\x01", end = "\x02"):
+        escaped = False
+        result = ""
+        for c in prompt:
+            if c == "\x1b" and not escaped:
+                result += start + c
+                escaped = True
+            elif c.isalpha() and escaped:
+                result += c + end
+                escaped = False
+            else:
+                result += c
+        return result
 
 
 def watch(varname, format='h'):

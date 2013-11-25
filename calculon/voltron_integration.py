@@ -9,17 +9,18 @@ except ImportError:
     voltron = None
 
 class VoltronProxy(object):
+    _instance = None
     config = {
         'type': 'interactive',
         'update_on': 'interactive',
     }
 
     def __new__(cls, *args, **kwargs):
-        if voltron:
-            obj = super(VoltronProxy, cls).__new__(cls, *args, **kwargs)
+        if voltron and not cls._instance:
+                cls._instance = super(VoltronProxy, cls).__new__(cls, *args, **kwargs)
         else:
-            obj = None
-        return obj
+            cls._instance = None
+        return cls._instance
 
     def __init__(self):
         self.connected = False
