@@ -5,13 +5,14 @@ import os
 import tokenize, token
 import sys
 import Pyro4
+import itertools
 from collections import defaultdict
 
 from .colour import *
 from .env import *
 from .voltron_integration import VoltronProxy
 
-CALCULON_HISTORY = os.path.join(ENV['dir'], 'history')
+CALCULON_HISTORY = os.path.join(ENV.dir, 'history')
 
 def constant_factory(value):
     return itertools.repeat(value).next
@@ -20,7 +21,6 @@ disp = None
 last_result = defaultdict(constant_factory(None))
 last_line = ""
 repl = None
-
 
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):

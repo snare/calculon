@@ -10,9 +10,10 @@ setup(
     keywords = "calculator programmer hex 64-bit",
     url = "https://github.com/snarez/calculon",
     packages=['calculon'],
-    install_requires = ['rl', 'Pyro4', 'blessings'],
+    install_requires = ['rl', 'Pyro4', 'blessings', 'scruffy'],
     package_data = {'calculon': ['config/*']},
     install_package_data = True,
     entry_points = {'console_scripts': ['calculon = calculon:main']},
-    zip_safe=False
+    zip_safe=False,
+    dependency_links = ["https://github.com/snarez/scruffy/tarball/master#egg=scruffy"]
 )
