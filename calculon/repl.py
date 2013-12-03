@@ -6,6 +6,7 @@ import tokenize, token
 import sys
 import Pyro4
 import itertools
+import re
 from collections import defaultdict
 
 from .colour import *
@@ -55,6 +56,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         if 'watch' not in self.locals:
             self.locals['watch'] = watch
             self.locals['unwatch'] = unwatch
+            self.locals['switch'] = switch
             self.locals['disp'] = disp
             proxy = VoltronProxy()
             if proxy:
@@ -153,3 +155,12 @@ def unwatch(varname, format='h'):
             print("Variable '%s' is already being watched" % varname)
     else:
         print("Specify variable name as a string")
+
+
+def switch(value):
+    h = hex(value)[2:]
+    if len(h) % 2 > 0:
+        h = '0' + h
+    bytes = re.findall('..', h)
+    bytes.reverse()
+    return int(''.join(bytes), 16)
