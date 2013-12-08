@@ -159,6 +159,7 @@ def unwatch(varname, format='h'):
 
 def switch(value):
     h = hex(value)[2:]
+    h = h.replace('L', '')
     if len(h) % 2 > 0:
         h = '0' + h
     bytes = re.findall('..', h)
