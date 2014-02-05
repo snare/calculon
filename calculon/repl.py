@@ -33,6 +33,9 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
             if tokenType == token.OP:
                 source = '_ ' + source
+            elif tokenType == token.NAME and tokenString == 'watch':
+                toks = source.split()
+                source = "watch_expr(lambda: %s)" % ' '.join(toks[1:])
             break
 
         # if we got an empty source line, re-evaluate the last line
