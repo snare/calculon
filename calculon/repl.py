@@ -58,12 +58,12 @@ class CalculonInterpreter(code.InteractiveInterpreter):
 
         # push functions and data into locals if they're not there
         if 'watch' not in self.locals:
-            self.locals['watch'] = watch
-            self.locals['unwatch'] = unwatch
+            self.locals['_watch'] = watch
+            self.locals['_unwatch'] = unwatch
             self.locals['switch'] = switch
             self.locals['disp'] = disp
-            self.locals['watch_expr'] = watch_expr
-            self.locals['unwatch_expr'] = unwatch_expr
+            self.locals['_watch_expr'] = watch_expr
+            self.locals['_unwatch_expr'] = unwatch_expr
             proxy = VoltronProxy()
             if proxy:
                 self.locals['V'] = proxy
