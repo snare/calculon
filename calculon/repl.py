@@ -27,6 +27,7 @@ watched_exprs = []
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
         global disp, last_result, last_line, repl
+        eval_source = True
 
         # if the code starts with an operator, prepend the _ variable
         tokens = tokenize.generate_tokens(lambda: source)
@@ -35,7 +36,12 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 source = '_ ' + source
             elif tokenType == token.NAME and tokenString == 'watch':
                 toks = source.split()
-                source = "watch_expr(lambda: %s)" % ' '.join(toks[1:])
+                # We handle our code here, so we don't need to actually let the
+                # backend poke anything
+                expr = ' '.join(toks[1:])
+                thunk = eval("lambda: %s" % expr, self.locals)
+                watch_expr(thunk, expr)
+                eval_source = False
             break
 
         # if we got an empty source line, re-evaluate the last line
@@ -44,17 +50,18 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         else:
             last_line = source
 
-        # compile code
-        try:
-            code = self.compile(source, filename, symbol)
-        except (OverflowError, SyntaxError, ValueError):
-            self.showsyntaxerror(filename)
-            return False
-        if code is None:
-            return True
+        if eval_source:
+            # compile code
+            try:
+                code = self.compile(source, filename, symbol)
+            except (OverflowError, SyntaxError, ValueError):
+                self.showsyntaxerror(filename)
+                return False
+            if code is None:
+                return True
 
-        # if we got a valid code object, run it
-        self.runcode(code)
+            # if we got a valid code object, run it
+            self.runcode(code)
 
         # push functions and data into locals if they're not there
         if 'watch' not in self.locals:
@@ -87,7 +94,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             except KeyError:
                 pass
 
-        disp.set_exprs([(expr(), fmt) for expr, fmt in watched_exprs])
+        disp.set_exprs([(expr(), fmt, label) for expr, fmt, label in watched_exprs])
 
         return False
 
@@ -153,8 +160,8 @@ def watch(varname, format='h'):
     else:
         print("Specify variable name as a string")
 
-def watch_expr(expr, format='h'):
-    watched_exprs.append((expr, format))
+def watch_expr(expr, label, format='h'):
+    watched_exprs.append((expr, format, label))
 
 def unwatch_expr(idx):
     del watched_exprs[idx]

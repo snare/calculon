@@ -308,11 +308,11 @@ class CalculonDisplay (object):
     def draw_exprs(self):
         y = self.offset_exprs() + self.padding['vartop']
         x = self.padding['left']
-        for idx, value in enumerate(self.exprs):
+        for idx, (value, fmt, label) in enumerate(self.exprs):
             # TODO Ditch hardcoded format
-            self.draw_value_at_row(value[0], value[1], y + idx, str(idx))
+            self.draw_value_at_row(value, fmt, y + idx, label)
 
     def draw_expr_labels(self):
         y = self.offset_exprs() + self.padding['vartop']
-        for idx, value in enumerate(self.exprs):
-            self.draw_labels_at_row(value[1], y + idx, str(idx))
+        for idx, (value, fmt, label) in enumerate(self.exprs):
+            self.draw_labels_at_row(fmt, y + idx, label)
