@@ -25,7 +25,7 @@ VALID_FORMATS = ['h','d','o','a','u','b']
 class HiddenCursor(object):
     def __enter__(self):
         os.system('tput civis')
-        
+
     def __exit__(self, type, value, traceback):
         os.system('tput cnorm')
 
@@ -37,8 +37,8 @@ class CalculonDisplay (object):
 
         self.config = self.init_config(CONFIG)
         self.bin_mode = self.config['bin_mode']
-        self.bin_row = self.config['bin_row'] 
-        self.bits = self.config['bits'] 
+        self.bin_row = self.config['bin_row']
+        self.bits = self.config['bits']
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
@@ -46,14 +46,21 @@ class CalculonDisplay (object):
 
         self.header = 'calculon v1.0'
         self.show_header = True
+
+        # Watched variables
         self.lastvars = {}
         self.vars = {}
         self.vars['_'] = 0
         self.var_fmt = {}
         self.var_names = []
+
+        # Watched expressions
+        self.exprs = []
+
         self.draw_state = {
             'header': True, 'value': True, 'vallabel': True, 'binlabel': True,
-            'varlabel': True, 'varvalue': True, 'all': True
+            'varlabel': True, 'varvalue': True, 'exprlabel': True, 'exprvalue': True,
+            'all': True
         }
 
         for var in self.config['variables']:
@@ -88,6 +95,12 @@ class CalculonDisplay (object):
             self.lastvars[name] = self.vars[name]
             self.vars[name] = value
             self.draw_state['varvalue'] = True
+        self.redraw()
+
+    def set_exprs(self, values):
+        self.exprs = values
+        self.draw_state['exprvalue'] = True
+        self.draw_state['exprlabel'] = True
         self.redraw()
 
     def watch_var(self, varname, format):
@@ -126,6 +139,12 @@ class CalculonDisplay (object):
         if self.draw_state['varvalue'] or self.draw_state['all']:
             self.draw_vars()
             self.draw_state['varvalue'] = False
+        if self.draw_state['exprlabel'] or self.draw_state['all']:
+            self.draw_expr_labels()
+            self.draw_state['exprlabel'] = False
+        if self.draw_state['exprvalue'] or self.draw_state['all']:
+            self.draw_exprs()
+            self.draw_state['exprvalue'] = False
         self.draw_state['all'] = False
 
     def get_value_formats(self):
@@ -153,6 +172,12 @@ class CalculonDisplay (object):
             n += self.padding['vartop'] + self.padding['varbottom']
         return n
 
+    def num_rows_exprs(self):
+        n = len(self.exprs)
+        if n > 0:
+            n += self.padding['vartop'] + self.padding['varbottom']
+        return n
+
     def offset_val(self):
         return self.padding['top']
 
@@ -161,6 +186,9 @@ class CalculonDisplay (object):
 
     def offset_vars(self):
         return self.offset_bin() + self.num_rows_bin()
+
+    def offset_exprs(self):
+        return self.offset_vars() + self.num_rows_vars()
 
     def draw_str(self, str, attr='', x=0, y=0):
         print((self.term.normal + self.term.move(y, x) + attr + str).format(t=self.term))
@@ -277,3 +305,14 @@ class CalculonDisplay (object):
             self.draw_labels_at_row(self.var_fmt[var], y, var)
             y += 1
 
+    def draw_exprs(self):
+        y = self.offset_exprs() + self.padding['vartop']
+        x = self.padding['left']
+        for idx, value in enumerate(self.exprs):
+            # TODO Ditch hardcoded format
+            self.draw_value_at_row(value[0], value[1], y + idx, str(idx))
+
+    def draw_expr_labels(self):
+        y = self.offset_exprs() + self.padding['vartop']
+        for idx, value in enumerate(self.exprs):
+            self.draw_labels_at_row(value[1], y + idx, str(idx))
