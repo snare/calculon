@@ -22,6 +22,7 @@ disp = None
 last_result = defaultdict(constant_factory(None))
 last_line = ""
 repl = None
+watched_exprs = []
 
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
@@ -58,6 +59,8 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             self.locals['unwatch'] = unwatch
             self.locals['switch'] = switch
             self.locals['disp'] = disp
+            self.locals['watch_expr'] = watch_expr
+            self.locals['unwatch_expr'] = unwatch_expr
             proxy = VoltronProxy()
             if proxy:
                 self.locals['V'] = proxy
@@ -80,6 +83,8 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                     last_result[varname] = result
             except KeyError:
                 pass
+
+        disp.set_exprs([expr() for expr in watched_exprs])
 
         return False
 
@@ -145,6 +150,11 @@ def watch(varname, format='h'):
     else:
         print("Specify variable name as a string")
 
+def watch_expr(expr, format='h'):
+    watched_exprs.append(expr)
+
+def unwatch_expr(idx):
+    del watched_exprs[idx]
 
 def unwatch(varname, format='h'):
     if type(varname) is str:
