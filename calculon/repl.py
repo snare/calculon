@@ -84,7 +84,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             except KeyError:
                 pass
 
-        disp.set_exprs([expr() for expr in watched_exprs])
+        disp.set_exprs([(expr(), fmt) for expr, fmt in watched_exprs])
 
         return False
 
@@ -151,7 +151,7 @@ def watch(varname, format='h'):
         print("Specify variable name as a string")
 
 def watch_expr(expr, format='h'):
-    watched_exprs.append(expr)
+    watched_exprs.append((expr, format))
 
 def unwatch_expr(idx):
     del watched_exprs[idx]
