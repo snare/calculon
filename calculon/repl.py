@@ -64,7 +64,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             self.runcode(code)
 
         # push functions and data into locals if they're not there
-        if 'watch' not in self.locals:
+        if '_watch' not in self.locals:
             self.locals['_watch'] = watch
             self.locals['_unwatch'] = unwatch
             self.locals['switch'] = switch
