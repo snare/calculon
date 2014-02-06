@@ -12,14 +12,12 @@ class VoltronProxy(object):
     _instance = None
     config = {
         'type': 'interactive',
-        'update_on': 'interactive',
+        'update_on': 'stop',
     }
 
     def __new__(cls, *args, **kwargs):
         if voltron and not cls._instance:
                 cls._instance = super(VoltronProxy, cls).__new__(cls, *args, **kwargs)
-        else:
-            cls._instance = None
         return cls._instance
 
     def __init__(self):
@@ -51,6 +49,9 @@ class VoltronProxy(object):
             return resp['value']
         else:
             raise Exception("Not connected")
+
+    def start_callback_thread(self, lock, callback):
+        return self.client.start_callback_thread(lock, callback)
 
 
     def connect(self):

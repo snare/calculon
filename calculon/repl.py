@@ -6,6 +6,7 @@ import tokenize, token
 import sys
 import Pyro4
 import itertools
+import threading
 import re
 from collections import defaultdict
 
@@ -22,66 +23,83 @@ disp = None
 last_result = defaultdict(constant_factory(None))
 last_line = ""
 repl = None
+lock = threading.Lock()
 
 class CalculonInterpreter(code.InteractiveInterpreter):
+
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
-        global disp, last_result, last_line, repl
+        def update_display_vars():
+            # update values of variables
+            for varname in disp.get_var_names():
+                try:
+                    result = self.locals[varname]
+                    if type(result) in [int, long] and result != last_result[varname]:
+                        disp.update_value(result, varname)
+                        last_result[varname] = result
+                except KeyError:
+                    pass
 
-        # if the code starts with an operator, prepend the _ variable
-        tokens = tokenize.generate_tokens(lambda: source)
-        for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
-            if tokenType == token.OP:
-                source = '_ ' + source
-            break
+        def debugger_stopped_callback(msg):
+            update_display_vars()
+            disp.redraw(all=True)
 
-        # if we got an empty source line, re-evaluate the last line
-        if len(source) == 0:
-            source = last_line
-        else:
-            last_line = source
-
-        # compile code
         try:
-            code = self.compile(source, filename, symbol)
-        except (OverflowError, SyntaxError, ValueError):
-            self.showsyntaxerror(filename)
-            return False
-        if code is None:
-            return True
+            global disp, last_result, last_line, repl
 
-        # if we got a valid code object, run it
-        self.runcode(code)
+            lock.acquire()
+            # if the code starts with an operator, prepend the _ variable
+            tokens = tokenize.generate_tokens(lambda: source)
+            for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
+                if tokenType == token.OP:
+                    source = '_ ' + source
+                break
 
-        # push functions and data into locals if they're not there
-        if 'watch' not in self.locals:
-            self.locals['watch'] = watch
-            self.locals['unwatch'] = unwatch
-            self.locals['switch'] = switch
-            self.locals['disp'] = disp
-            proxy = VoltronProxy()
-            if proxy:
-                self.locals['V'] = proxy
+            # if we got an empty source line, re-evaluate the last line
+            if len(source) == 0:
+                source = last_line
+            else:
+                last_line = source
 
-        # update value from last operation
-        try:
-            result = self.locals['__builtins__']['_']
-            if type(result) in [int, long] and result != last_result['_']:
-                disp.update_value(result)
-                last_result['_'] = result
-        except KeyError, e:
-            self.locals['__builtins__']['_'] = 0
-
-        # update values of variables
-        for varname in disp.get_var_names():
+            # compile code
             try:
-                result = self.locals[varname]
-                if type(result) in [int, long] and result != last_result[varname]:
-                    disp.update_value(result, varname)
-                    last_result[varname] = result
-            except KeyError:
-                pass
+                code = self.compile(source, filename, symbol)
+            except (OverflowError, SyntaxError, ValueError):
+                self.showsyntaxerror(filename)
+                return False
+            if code is None:
+                return True
 
-        return False
+            # if we got a valid code object, run it
+            self.runcode(code)
+
+            # push functions and data into locals if they're not there
+            if 'watch' not in self.locals:
+                self.locals['watch'] = watch
+                self.locals['unwatch'] = unwatch
+                self.locals['switch'] = switch
+                self.locals['disp'] = disp
+                proxy = VoltronProxy()
+                if proxy:
+                    self.locals['V'] = proxy
+                    proxy.start_callback_thread(lock, debugger_stopped_callback)
+                else:
+                    print("No voltron proxy :(")
+
+            # update value from last operation
+            try:
+                result = self.locals['__builtins__']['_']
+                if type(result) in [int, long] and result != last_result['_']:
+                    disp.update_value(result)
+                    last_result['_'] = result
+            except KeyError, e:
+                self.locals['__builtins__']['_'] = 0
+
+            update_display_vars()
+
+            return False
+        finally:
+            lock.release()
+
 
 
 class Repl(object):
