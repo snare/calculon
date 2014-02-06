@@ -25,7 +25,7 @@ VALID_FORMATS = ['h','d','o','a','u','b']
 class HiddenCursor(object):
     def __enter__(self):
         os.system('tput civis')
-        
+
     def __exit__(self, type, value, traceback):
         os.system('tput cnorm')
 
@@ -37,8 +37,8 @@ class CalculonDisplay (object):
 
         self.config = self.init_config(CONFIG)
         self.bin_mode = self.config['bin_mode']
-        self.bin_row = self.config['bin_row'] 
-        self.bits = self.config['bits'] 
+        self.bin_row = self.config['bin_row']
+        self.bits = self.config['bits']
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
