@@ -103,6 +103,8 @@ class CalculonDisplay (object):
 
     def redraw(self, all=False):
         self.update_bin_mode()
+        if all:
+            self.draw_state['all'] = True
         if self.draw_state['all']:
             print(self.term.clear())
         if self.draw_state['header'] or self.draw_state['all']:
