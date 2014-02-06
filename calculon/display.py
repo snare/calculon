@@ -108,6 +108,8 @@ class CalculonDisplay (object):
         return self.var_names
 
     def redraw(self, all=False):
+        if all:
+            self.draw_state = 'all'
         if self.draw_state['header'] or self.draw_state['all']:
             self.draw_header()
             self.draw_state['header'] = False
