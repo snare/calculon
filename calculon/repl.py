@@ -41,6 +41,8 @@ class CalculonInterpreter(code.InteractiveInterpreter):
 
         def debugger_stopped_callback(msg):
             update_display_vars()
+            disp.redraw(all=True)
+
         try:
             global disp, last_result, last_line, repl
 
