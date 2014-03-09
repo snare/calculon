@@ -101,8 +101,6 @@ class CalculonInterpreter(code.InteractiveInterpreter):
 
         # push functions and data into locals if they're not there
         if '_watch' not in self.locals:
-            self.locals['_watch'] = watch
-            self.locals['_unwatch'] = unwatch
             self.locals['switch'] = switch
             self.locals['disp'] = disp
             self.locals['_watch_expr'] = watch_expr
@@ -119,16 +117,6 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 last_result['_'] = result
         except KeyError, e:
             self.locals['__builtins__']['_'] = 0
-
-        # update values of variables
-        for varname in disp.get_var_names():
-            try:
-                result = self.locals[varname]
-                if type(result) in [int, long] and result != last_result[varname]:
-                    disp.update_value(result, varname)
-                    last_result[varname] = result
-            except KeyError:
-                pass
 
         disp.set_exprs([(expr(), fmt, label) for expr, fmt, label in watched_exprs])
 
@@ -186,32 +174,11 @@ class Repl(object):
         return result
 
 
-def watch(varname, format='h'):
-    if type(varname) is str:
-        if varname not in disp.get_var_names():
-            disp.watch_var(varname, format)
-            disp.redraw()
-        else:
-            print("Variable '%s' is already being watched" % varname)
-    else:
-        print("Specify variable name as a string")
-
 def watch_expr(expr, label, format='h'):
     watched_exprs.append((expr, format, label))
 
 def unwatch_expr(idx):
     del watched_exprs[idx]
-
-def unwatch(varname, format='h'):
-    if type(varname) is str:
-        if varname not in disp.get_var_names():
-            disp.unwatch_var(varname)
-            disp.redraw()
-        else:
-            print("Variable '%s' is already being watched" % varname)
-    else:
-        print("Specify variable name as a string")
-
 
 def switch(value):
     h = hex(value)[2:]
