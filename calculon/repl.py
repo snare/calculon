@@ -66,6 +66,18 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 thunk = eval("lambda: %s" % expr, self.locals)
                 watch_expr(thunk, expr, fmt)
                 eval_source = False
+            elif tokenType == token.NAME and tokenString == 'unwatch':
+                toks = source.split()
+                if len(toks) != 2:
+                    warn("syntax: unwatch <expression ID>")
+                    return False
+                try:
+                    exprid = int(toks[1])
+                except ValueError:
+                    warn("syntax: unwatch <expression ID>")
+                    return False
+                unwatch_expr(exprid)
+                eval_source = False
             break
 
         # if we got an empty source line, re-evaluate the last line
