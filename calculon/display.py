@@ -315,4 +315,5 @@ class CalculonDisplay (object):
     def draw_expr_labels(self):
         y = self.offset_exprs() + self.padding['vartop']
         for idx, (value, fmt, label) in enumerate(self.exprs):
+            label = "%s : %2d" % (label, idx)
             self.draw_labels_at_row(fmt, y + idx, label)
