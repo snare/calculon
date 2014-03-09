@@ -12,6 +12,7 @@ from collections import defaultdict
 from .colour import *
 from .env import *
 from .voltron_integration import VoltronProxy
+from .display import VALID_FORMATS
 
 CALCULON_HISTORY = os.path.join(ENV.dir, 'history')
 
@@ -29,6 +30,9 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         global disp, last_result, last_line, repl
         eval_source = True
 
+        def warn(msg):
+            sys.stderr.write("Warning: %s\n" % msg)
+
         # if the code starts with an operator, prepend the _ variable
         tokens = tokenize.generate_tokens(lambda: source)
         for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
@@ -36,11 +40,31 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 source = '_ ' + source
             elif tokenType == token.NAME and tokenString == 'watch':
                 toks = source.split()
+                if len(toks) == 1:
+                    warn("syntax: watch [as <format>] <expression>")
+                    return False
+
+                # Special case `watch as d <expr>
+                if toks[1] == "as":
+                    if len(toks) < 4:
+                        warn("syntax: watch [as <format>] <expression>")
+                        return False
+                    fmt = toks[2]
+                    toks = toks[3:]
+                else:
+                    fmt = 'h'
+                    toks = toks[1:]
+
+                if fmt not in VALID_FORMATS:
+                    warn("invalid format: %s" % fmt)
+                    return False
+
+
                 # We handle our code here, so we don't need to actually let the
                 # backend poke anything
-                expr = ' '.join(toks[1:])
+                expr = ' '.join(toks)
                 thunk = eval("lambda: %s" % expr, self.locals)
-                watch_expr(thunk, expr)
+                watch_expr(thunk, expr, fmt)
                 eval_source = False
             break
 
