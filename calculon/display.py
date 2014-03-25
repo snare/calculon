@@ -25,7 +25,7 @@ VALID_FORMATS = ['h','d','o','a','u','b']
 class HiddenCursor(object):
     def __enter__(self):
         os.system('tput civis')
-        
+
     def __exit__(self, type, value, traceback):
         os.system('tput cnorm')
 
@@ -37,8 +37,8 @@ class CalculonDisplay (object):
 
         self.config = self.init_config(CONFIG)
         self.bin_mode = self.config['bin_mode']
-        self.bin_row = self.config['bin_row'] 
-        self.bits = self.config['bits'] 
+        self.bin_row = self.config['bin_row']
+        self.bits = self.config['bits']
         self.formats = self.config['formats']
         self.align = self.config['align']
         self.padding = self.config['padding']
@@ -46,18 +46,18 @@ class CalculonDisplay (object):
 
         self.header = 'calculon v1.0'
         self.show_header = True
-        self.lastvars = {}
-        self.vars = {}
-        self.vars['_'] = 0
-        self.var_fmt = {}
-        self.var_names = []
+
+        # Watched variables
+        self.lastval = 0
+
+        # Watched expressions
+        self.exprs = []
+
         self.draw_state = {
             'header': True, 'value': True, 'vallabel': True, 'binlabel': True,
-            'varlabel': True, 'varvalue': True, 'all': True
+            'varlabel': True, 'varvalue': True, 'exprlabel': True, 'exprvalue': True,
+            'all': True
         }
-
-        for var in self.config['variables']:
-            self.watch_var(var, self.config['variables'][var]['format'])
 
         self.update_value(0)
 
@@ -79,33 +79,16 @@ class CalculonDisplay (object):
         self.update_value(0)
         self.redraw()
 
-    def update_value(self, value, name=None):
-        if name == None:
-            self.lastvars['_'] = self.vars['_']
-            self.vars['_'] = value
-            self.draw_state['value'] = True
-        else:
-            self.lastvars[name] = self.vars[name]
-            self.vars[name] = value
-            self.draw_state['varvalue'] = True
+    def update_value(self, value):
+        self.lastval = value
+        self.draw_state['value'] = True
         self.redraw()
 
-    def watch_var(self, varname, format):
-        if varname not in self.vars:
-            self.var_fmt[varname] = format
-            self.vars[varname] = 0
-            self.var_names.append(varname)
-            self.draw_state['all'] = True
-
-    def unwatch_var(self, varname):
-        if varname in self.vars:
-            del self.var_fmt[varname]
-            del self.vars[varname]
-            self.var_names.remove(varname)
-            self.draw_state['all'] = True
-
-    def get_var_names(self):
-        return self.var_names
+    def set_exprs(self, values):
+        self.exprs = values
+        self.draw_state['exprvalue'] = True
+        self.draw_state['exprlabel'] = True
+        self.redraw()
 
     def redraw(self, all=False):
         if self.draw_state['header'] or self.draw_state['all']:
@@ -120,19 +103,19 @@ class CalculonDisplay (object):
             self.draw_value_labels()
             self.draw_binary_labels()
             self.draw_state['vallabel'] = False
-        if self.draw_state['varlabel'] or self.draw_state['all']:
-            self.draw_var_labels()
-            self.draw_state['varlabel'] = False
-        if self.draw_state['varvalue'] or self.draw_state['all']:
-            self.draw_vars()
-            self.draw_state['varvalue'] = False
+        if self.draw_state['exprlabel'] or self.draw_state['all']:
+            self.draw_expr_labels()
+            self.draw_state['exprlabel'] = False
+        if self.draw_state['exprvalue'] or self.draw_state['all']:
+            self.draw_exprs()
+            self.draw_state['exprvalue'] = False
         self.draw_state['all'] = False
 
     def get_value_formats(self):
         return filter(lambda x: x in VALID_FORMATS and x != 'b', self.formats)
 
     def num_rows(self):
-        return self.offset_vars() + self.num_rows_vars() + self.padding['bottom']
+        return self.offset_exprs() + self.num_rows_exprs() + self.padding['bottom']
 
     def num_cols(self):
         if self.bin_mode == "wide":
@@ -147,8 +130,8 @@ class CalculonDisplay (object):
     def num_rows_bin(self):
         return self.bits / self.bin_row + self.padding['bintop'] + self.padding['binbottom']
 
-    def num_rows_vars(self):
-        n = len(self.var_fmt)
+    def num_rows_exprs(self):
+        n = len(self.exprs)
         if n > 0:
             n += self.padding['vartop'] + self.padding['varbottom']
         return n
@@ -159,7 +142,7 @@ class CalculonDisplay (object):
     def offset_bin(self):
         return self.offset_val() + self.num_rows_val()
 
-    def offset_vars(self):
+    def offset_exprs(self):
         return self.offset_bin() + self.num_rows_bin()
 
     def draw_str(self, str, attr='', x=0, y=0):
@@ -185,7 +168,7 @@ class CalculonDisplay (object):
     def draw_value(self, varname=None):
         y = self.padding['top']
         for fmt in self.get_value_formats():
-            self.draw_value_at_row(self.vars['_'], fmt, y)
+            self.draw_value_at_row(self.lastval, fmt, y)
             y += 1
 
     def draw_value_at_row(self, value, fmt, row, label=None):
@@ -232,13 +215,13 @@ class CalculonDisplay (object):
                 self.draw_str(label, self.attrs['vallabel'], self.num_cols() - self.padding['right'] - len(label), row)
 
     def draw_binary(self):
-        s = (BASE_FMT['b'] % self.bits).format(self.vars['_'])
+        s = (BASE_FMT['b'] % self.bits).format(self.lastval)
         if len(s) > self.bits:
             s = s[len(s)-self.bits:]
         y = len(self.get_value_formats()) + self.padding['top'] + self.padding['bintop']
         x = self.padding['left']
         p = 0
-        if self.vars['_'] >= 1<<self.bits:
+        if self.lastval >= 1<<self.bits:
             attr = self.attrs['err']
         else:
             attr = self.attrs['bval']
@@ -264,16 +247,15 @@ class CalculonDisplay (object):
             self.draw_str(right, self.attrs['binlabel'], self.num_cols() - self.padding['right'] - 2, y)
             y -= 1
 
-    def draw_vars(self):
-        y = self.offset_vars() + self.padding['vartop']
+    def draw_exprs(self):
+        y = self.offset_exprs() + self.padding['vartop']
         x = self.padding['left']
-        for var in self.var_names:
-            self.draw_value_at_row(self.vars[var], self.var_fmt[var], y, var)
-            y += 1
+        for idx, (value, fmt, label) in enumerate(self.exprs):
+            # TODO Ditch hardcoded format
+            self.draw_value_at_row(value, fmt, y + idx, label)
 
-    def draw_var_labels(self):
-        y = self.offset_vars() + self.padding['vartop']
-        for var in self.var_names:
-            self.draw_labels_at_row(self.var_fmt[var], y, var)
-            y += 1
-
+    def draw_expr_labels(self):
+        y = self.offset_exprs() + self.padding['vartop']
+        for idx, (value, fmt, label) in enumerate(self.exprs):
+            label = "%s : %2d" % (label, idx)
+            self.draw_labels_at_row(fmt, y + idx, label)

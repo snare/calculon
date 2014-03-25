@@ -12,6 +12,7 @@ from collections import defaultdict
 from .colour import *
 from .env import *
 from .voltron_integration import VoltronProxy
+from .display import VALID_FORMATS
 
 CALCULON_HISTORY = os.path.join(ENV.dir, 'history')
 
@@ -22,16 +23,68 @@ disp = None
 last_result = defaultdict(constant_factory(None))
 last_line = ""
 repl = None
+watched_exprs = []
 
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
         global disp, last_result, last_line, repl
+        eval_source = True
+
+        def warn(msg):
+            sys.stderr.write("Warning: %s\n" % msg)
 
         # if the code starts with an operator, prepend the _ variable
         tokens = tokenize.generate_tokens(lambda: source)
         for tokenType, tokenString, (startRow, startCol), (endRow, endCol), line in tokens:
             if tokenType == token.OP:
                 source = '_ ' + source
+            elif tokenType == token.NAME and tokenString == 'watch':
+                toks = source.split()
+                if len(toks) == 1:
+                    warn("syntax: watch [as <format>] <expression>")
+                    return False
+
+                # Special case `watch as d <expr>
+                if toks[1] == "as":
+                    if len(toks) < 4:
+                        warn("syntax: watch [as <format>] <expression>")
+                        return False
+                    fmt = toks[2]
+                    toks = toks[3:]
+                else:
+                    fmt = 'h'
+                    toks = toks[1:]
+
+                if fmt not in VALID_FORMATS:
+                    warn("invalid format: %s" % fmt)
+                    return False
+
+
+                # We handle our code here, so we don't need to actually let the
+                # backend poke anything
+                expr = ' '.join(toks)
+                thunk = eval("lambda: %s" % expr, self.locals)
+
+                try:
+                    thunk()
+                except Exception as e:
+                    warn(str(e))
+                    return False
+
+                watch_expr(thunk, expr, fmt)
+                eval_source = False
+            elif tokenType == token.NAME and tokenString == 'unwatch':
+                toks = source.split()
+                if len(toks) != 2:
+                    warn("syntax: unwatch <expression ID>")
+                    return False
+                try:
+                    exprid = int(toks[1])
+                except ValueError:
+                    warn("syntax: unwatch <expression ID>")
+                    return False
+                unwatch_expr(exprid)
+                eval_source = False
             break
 
         # if we got an empty source line, re-evaluate the last line
@@ -40,24 +93,25 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         else:
             last_line = source
 
-        # compile code
-        try:
-            code = self.compile(source, filename, symbol)
-        except (OverflowError, SyntaxError, ValueError):
-            self.showsyntaxerror(filename)
-            return False
-        if code is None:
-            return True
+        if eval_source:
+            # compile code
+            try:
+                code = self.compile(source, filename, symbol)
+            except (OverflowError, SyntaxError, ValueError):
+                self.showsyntaxerror(filename)
+                return False
+            if code is None:
+                return True
 
-        # if we got a valid code object, run it
-        self.runcode(code)
+            # if we got a valid code object, run it
+            self.runcode(code)
 
         # push functions and data into locals if they're not there
-        if 'watch' not in self.locals:
-            self.locals['watch'] = watch
-            self.locals['unwatch'] = unwatch
+        if '_watch' not in self.locals:
             self.locals['switch'] = switch
             self.locals['disp'] = disp
+            self.locals['_watch_expr'] = watch_expr
+            self.locals['_unwatch_expr'] = unwatch_expr
             proxy = VoltronProxy()
             if proxy:
                 self.locals['V'] = proxy
@@ -68,18 +122,17 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             if type(result) in [int, long] and result != last_result['_']:
                 disp.update_value(result)
                 last_result['_'] = result
-        except KeyError, e:
+        except KeyError as e:
             self.locals['__builtins__']['_'] = 0
 
-        # update values of variables
-        for varname in disp.get_var_names():
+        def safe_eval(expr):
             try:
-                result = self.locals[varname]
-                if type(result) in [int, long] and result != last_result[varname]:
-                    disp.update_value(result, varname)
-                    last_result[varname] = result
-            except KeyError:
-                pass
+                return expr()
+            except Exception as e:
+                warn(e)
+                return 0
+
+        disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
 
         return False
 
@@ -135,27 +188,11 @@ class Repl(object):
         return result
 
 
-def watch(varname, format='h'):
-    if type(varname) is str:
-        if varname not in disp.get_var_names():
-            disp.watch_var(varname, format)
-            disp.redraw()
-        else:
-            print("Variable '%s' is already being watched" % varname)
-    else:
-        print("Specify variable name as a string")
+def watch_expr(expr, label, format='h'):
+    watched_exprs.append((expr, format, label))
 
-
-def unwatch(varname, format='h'):
-    if type(varname) is str:
-        if varname not in disp.get_var_names():
-            disp.unwatch_var(varname)
-            disp.redraw()
-        else:
-            print("Variable '%s' is already being watched" % varname)
-    else:
-        print("Specify variable name as a string")
-
+def unwatch_expr(idx):
+    del watched_exprs[idx]
 
 def switch(value):
     h = hex(value)[2:]
