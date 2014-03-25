@@ -59,7 +59,9 @@ From here, any Python code entered into the REPL that results in a numeric value
 
 Calculon adds some hackery to the REPL for watching variables. Calling `watch <expr>` will add the given expression to a list of expressions that are tracked and updated every time they change. For example:
 
-	>>> watch a + 1
+    >>> watch a
+    >>> watch b
+    >>> watch a + b
 
 Now when these variables are updated:
 
