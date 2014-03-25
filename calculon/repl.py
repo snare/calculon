@@ -64,6 +64,13 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 # backend poke anything
                 expr = ' '.join(toks)
                 thunk = eval("lambda: %s" % expr, self.locals)
+
+                try:
+                    thunk()
+                except Exception as e:
+                    warn(str(e))
+                    return False
+
                 watch_expr(thunk, expr, fmt)
                 eval_source = False
             elif tokenType == token.NAME and tokenString == 'unwatch':
