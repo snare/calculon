@@ -6,11 +6,9 @@ A terminal-based programmer's calculator
 
 I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a Python REPL, so I figured I'd have a go at writing a quick terminal-based calculator in Python.
 
-**Note: these screenshots are outdated and need updating.**
+[![calculon example](http://i.imgur.com/F5BJYAu.png)](#example)
 
-[![calculon example](http://i.imgur.com/SkWdnld.png)](#example)
-
-[![calculon example2](http://ho.ax/posts/2013/10/calculon_wide.png)](#example2)
+[![calculon example2](http://i.imgur.com/aqb6a1u.png)](#example2)
 
 **Note: Calculon currently only supports the new decoupled mode, wherein the display and REPL are run in different terminals. Eventually I'll fix the integrated mode.**
 
@@ -59,19 +57,21 @@ From here, any Python code entered into the REPL that results in a numeric value
 
 2468 will be rendered in the display.
 
-Calculon adds some top level functions to the REPL for watching variables. Calling the `watch()` function with a variable name (and optional output format) will add the named variable to the variable display below the binary display.
+Calculon adds some hackery to the REPL for watching variables. Calling `watch <expr>` will add the given expression to a list of expressions that are tracked and updated every time they change. For example:
 
-	>>> watch("somevar")
-	>>> watch("anothervar", "d")
+	>>> watch a + 1
+	>>> watch b + 5 as h
 
 Now when these variables are updated:
 
-	>>> somevar = 1234
-	>>> anothervar = 1234
+	>>> a = 1234
+	>>> b = 1234
 
-Their values will be tracked. Variables can be removed from this display with the `unwatch()` function:
+Their values will be tracked and the expressions reevaluated. Expressions can be removed from this display with the `unwatch` keyword:
 
-	>>> unwatch("somevar")
+	>>> unwatch 0
+
+Where 0 is the ID displayed at the end (or beginning, when right aligned) of the line.
 
 Calculon now has support to connect to [voltron](https://github.com/snarez/voltron) and inspect register state. If you have the most recent version of calculon and voltron, and voltron is running, calculon will connect to it at startup. Calculon can manually connect and disconnect from voltron as follows:
 
