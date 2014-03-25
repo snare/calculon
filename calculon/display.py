@@ -3,6 +3,7 @@ import string
 import struct
 import Pyro4
 import os
+import time
 from blessings import Terminal
 
 from .env import *
@@ -35,9 +36,10 @@ class CalculonDisplay (object):
         self.term = Terminal()
         print(self.term.enter_fullscreen())
 
+        # parse config
         self.config = self.init_config(CONFIG)
         self.bin_mode = self.config['bin_mode']
-        self.bin_row = self.config['bin_row']
+        self.cur_bin_mode = None
         self.bits = self.config['bits']
         self.formats = self.config['formats']
         self.align = self.config['align']
@@ -59,17 +61,13 @@ class CalculonDisplay (object):
             'all': True
         }
 
+        # set initial value
         self.update_value(0)
 
     def init_config(self, config):
         # update text attributes
         for sec in config['attrs']:
             config['attrs'][sec] = ''.join(['{t.' + x + '}' for x in config['attrs'][sec]])
-
-        # round up bits to nearest row
-        config['bin_row'] = BIN_MODE_ROW_NARROW if config['bin_mode'] == "narrow" else BIN_MODE_ROW_WIDE
-        if config['bits'] % config['bin_row'] > 0:
-            config['bits'] += config['bin_row'] - (config['bits'] % config['bin_row'])
 
         return config
 
@@ -78,6 +76,19 @@ class CalculonDisplay (object):
         self.repl_win = repl_win
         self.update_value(0)
         self.redraw()
+
+    def update_bin_mode(self):
+        # detect bin display mode
+        old_mode = self.cur_bin_mode
+        if self.bin_mode == "auto":
+            self.cur_bin_mode = "wide" if self.term.width >= BIN_MODE_WIDTH_WIDE else "narrow"
+        if self.cur_bin_mode != old_mode:
+            self.draw_state['all'] = True
+
+        # round up bits to nearest row
+        self.bin_row = BIN_MODE_ROW_NARROW if self.cur_bin_mode == "narrow" else BIN_MODE_ROW_WIDE
+        if self.bits % self.bin_row > 0:
+            self.bits += self.bin_row - (self.bits % self.bin_row)
 
     def update_value(self, value):
         self.lastval = value
@@ -91,6 +102,9 @@ class CalculonDisplay (object):
         self.redraw()
 
     def redraw(self, all=False):
+        self.update_bin_mode()
+        if self.draw_state['all']:
+            print(self.term.clear())
         if self.draw_state['header'] or self.draw_state['all']:
             self.draw_header()
             self.draw_state['header'] = False
@@ -107,6 +121,7 @@ class CalculonDisplay (object):
             self.draw_expr_labels()
             self.draw_state['exprlabel'] = False
         if self.draw_state['exprvalue'] or self.draw_state['all']:
+            self.clear_exprs()
             self.draw_exprs()
             self.draw_state['exprvalue'] = False
         self.draw_state['all'] = False
@@ -118,7 +133,7 @@ class CalculonDisplay (object):
         return self.offset_exprs() + self.num_rows_exprs() + self.padding['bottom']
 
     def num_cols(self):
-        if self.bin_mode == "wide":
+        if self.cur_bin_mode == "wide":
             c = BIN_MODE_WIDTH_WIDE + self.padding['left'] + self.padding['right']
         else:
             c = BIN_MODE_WIDTH_NARROW + self.padding['left'] + self.padding['right']
@@ -150,7 +165,7 @@ class CalculonDisplay (object):
 
     def draw_header(self):
         if self.show_header:
-            head = self.header + ' ' * (self.num_cols() - len(self.header))
+            head = self.header + ' ' * (self.term.width - len(self.header))
             self.draw_str(head, self.attrs['header'])
 
     def clear_value(self, varname=None):
@@ -246,6 +261,9 @@ class CalculonDisplay (object):
             self.draw_str(left, self.attrs['binlabel'], self.padding['left'], y)
             self.draw_str(right, self.attrs['binlabel'], self.num_cols() - self.padding['right'] - 2, y)
             y -= 1
+
+    def clear_exprs(self):
+        pass
 
     def draw_exprs(self):
         y = self.offset_exprs() + self.padding['vartop']
