@@ -123,6 +123,7 @@ class CalculonDisplay (object):
         if self.draw_state['exprvalue'] or self.draw_state['all']:
             self.clear_exprs()
             self.draw_exprs()
+            self.draw_expr_labels()
             self.draw_state['exprvalue'] = False
         self.draw_state['all'] = False
 
@@ -263,17 +264,25 @@ class CalculonDisplay (object):
             y -= 1
 
     def clear_exprs(self):
-        pass
+        y = self.offset_exprs() + self.padding['vartop']
+        for idx, (value, fmt, label) in enumerate(self.exprs):
+            self.draw_str(' ' * self.num_cols(), '', 0, y)
 
     def draw_exprs(self):
         y = self.offset_exprs() + self.padding['vartop']
         x = self.padding['left']
         for idx, (value, fmt, label) in enumerate(self.exprs):
-            # TODO Ditch hardcoded format
             self.draw_value_at_row(value, fmt, y + idx, label)
 
     def draw_expr_labels(self):
         y = self.offset_exprs() + self.padding['vartop']
         for idx, (value, fmt, label) in enumerate(self.exprs):
-            label = "%s : %2d" % (label, idx)
-            self.draw_labels_at_row(fmt, y + idx, label)
+            if self.align == 'left':
+                self.draw_str(fmt, self.attrs['exprlabel'], self.padding['left'], y)
+                self.draw_str(str(idx), self.attrs['exprlabel'], self.num_cols() - self.padding['right'] - 2, y)
+                self.draw_str(label, self.attrs['expr'], self.num_cols() - self.padding['right'] - 2 - self.padding['label'] - len(label), y)
+            else:
+                self.draw_str(fmt, self.attrs['exprlabel'], self.num_cols() - self.padding['right'] - 2, y)
+                self.draw_str(str(idx), self.attrs['exprlabel'], self.padding['left'], y)
+                self.draw_str(label, self.attrs['expr'], self.padding['left'] + 2 + self.padding['label'], y)
+
