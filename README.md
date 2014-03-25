@@ -6,9 +6,13 @@ A terminal-based programmer's calculator
 
 I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a Python REPL, so I figured I'd have a go at writing a quick terminal-based calculator in Python.
 
+**Note: these screenshots are outdated and need updating.**
+
 [![calculon example](http://i.imgur.com/SkWdnld.png)](#example)
 
 [![calculon example2](http://ho.ax/posts/2013/10/calculon_wide.png)](#example2)
+
+**Note: Calculon currently only supports the new decoupled mode, wherein the display and REPL are run in different terminals. Eventually I'll fix the integrated mode.**
 
 Calculon supports two modes of operation - 'integrated' and 'decoupled'. When run in integrated mode (the default), the display and an embedded REPL are displayed in a single terminal session. The embedded REPL is a standard Python console provided by the `code` module. Decoupled mode allows you to run the display and REPL in different terminal sessions. The advantage of this mode is that you can also use `bpython` (or possibly other REPLs with some hacking) as the REPL to talk to the `calculon` display.
 
@@ -35,19 +39,15 @@ An example config (`example.cfg`) is included with the source. Copy it to `~/.ca
 Usage
 -----
 
-To run `calculon` in integrated mode:
-
-	$ calculon
-
-To run the display in decoupled mode:
+To run the display:
 
 	$ calculon display
 
-To run the embedded REPL in decoupled mode:
+To run the embedded REPL:
 
 	$ calculon console
 
-To connect to the display from within a `bpython` instance:
+Or, to connect to the display from within a `bpython` instance:
 
 	$ bpython
 	>>> import calculon.load
