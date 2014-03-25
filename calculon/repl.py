@@ -122,7 +122,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             if type(result) in [int, long] and result != last_result['_']:
                 disp.update_value(result)
                 last_result['_'] = result
-        except KeyError, e:
+        except KeyError as e:
             self.locals['__builtins__']['_'] = 0
 
         def safe_eval(expr):
