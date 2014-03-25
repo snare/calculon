@@ -125,7 +125,14 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         except KeyError, e:
             self.locals['__builtins__']['_'] = 0
 
-        disp.set_exprs([(expr(), fmt, label) for expr, fmt, label in watched_exprs])
+        def safe_eval(expr):
+            try:
+                return expr()
+            except Exception as e:
+                warn(e)
+                return 0
+
+        disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
 
         return False
 
