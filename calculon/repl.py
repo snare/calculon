@@ -71,9 +71,8 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 # We handle our code here, so we don't need to actually let the
                 # backend poke anything
                 expr = ' '.join(toks)
-                thunk = eval("lambda: %s" % expr, self.locals)
-
                 try:
+                    thunk = eval("lambda: %s" % expr, self.locals)
                     thunk()
                 except Exception as e:
                     warn(str(e))
