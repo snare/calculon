@@ -200,6 +200,8 @@ class CalculonDisplay (object):
                     fmtd += '.'
                 else:
                     fmtd += c
+                    if c in (r'{', r'}'):
+                        fmtd += c
             attr = self.attrs['aval']
         elif fmt == 'u':
             # s = ('{0:0=%dX}' % (self.bits/4)).format(value)
