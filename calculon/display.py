@@ -279,8 +279,9 @@ class CalculonDisplay (object):
             self.draw_value_at_row(value, fmt, y + idx, label)
 
     def draw_expr_labels(self):
-        y = self.offset_exprs() + self.padding['vartop']
+        top = self.offset_exprs() + self.padding['vartop']
         for idx, (value, fmt, label) in enumerate(self.exprs):
+            y = top + idx
             if self.align == 'left':
                 self.draw_str(fmt, self.attrs['exprlabel'], self.padding['left'], y)
                 self.draw_str(str(idx), self.attrs['exprlabel'], self.num_cols() - self.padding['right'] - 2, y)
