@@ -25,13 +25,21 @@ last_line = ""
 repl = None
 watched_exprs = []
 
+def warn(msg):
+    sys.stderr.write("Warning: %s\n" % msg)
+
+def safe_eval(expr):
+    try:
+        return expr()
+    except Exception as e:
+        warn(e)
+        return 0
+
+
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
         global disp, last_result, last_line, repl
         eval_source = True
-
-        def warn(msg):
-            sys.stderr.write("Warning: %s\n" % msg)
 
         # if the code starts with an operator, prepend the _ variable
         tokens = tokenize.generate_tokens(lambda: source)
@@ -124,13 +132,6 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 last_result['_'] = result
         except KeyError as e:
             self.locals['__builtins__']['_'] = 0
-
-        def safe_eval(expr):
-            try:
-                return expr()
-            except Exception as e:
-                warn(e)
-                return 0
 
         disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
 
