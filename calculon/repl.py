@@ -45,6 +45,12 @@ def mlock(lock):
         return inner
     return dec
 
+def update_display_exprs():
+    disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
+
+def debugger_stopped_callback(msg):
+    update_display_exprs()
+
 class CalculonInterpreter(code.InteractiveInterpreter):
     @mlock(lock)
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
@@ -142,7 +148,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         except KeyError as e:
             self.locals['__builtins__']['_'] = 0
 
-        disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
+        update_display_exprs()
 
         return False
 
