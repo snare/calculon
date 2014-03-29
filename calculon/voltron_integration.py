@@ -45,6 +45,8 @@ class _VoltronProxy(object):
         else:
             raise Exception("Not connected")
 
+    def start_callback_thread(self, lock, callback):
+        return self.client.start_callback_thread(lock, callback)
 
     def connect(self):
         if not self.connected:

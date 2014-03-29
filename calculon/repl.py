@@ -137,6 +137,9 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             self.locals['_unwatch_expr'] = unwatch_expr
             proxy = VoltronProxy()
             if proxy:
+                if proxy.connected:
+                    cb_proxy = VoltronProxy()
+                    cb_proxy.start_callback_thread(lock, debugger_stopped_callback)
                 self.locals['V'] = proxy
 
         # update value from last operation
