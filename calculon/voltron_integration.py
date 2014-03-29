@@ -53,13 +53,13 @@ class _VoltronProxy(object):
                 self.connected = True
                 print("Connected to voltron")
             except socket.error, e:
+                print("Couldn't connect because %s" % str(e))
                 pass
             except Exception, e:
                 print("Error loading voltron: " + str(e))
                 print("Make sure you have the most recent version of voltron")
         else:
             print("Already connected")
-
     def disconnect(self):
         if self.connected:
             self.client.close()
