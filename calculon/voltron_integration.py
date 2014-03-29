@@ -8,19 +8,12 @@ try:
 except ImportError:
     voltron = None
 
-class VoltronProxy(object):
+class _VoltronProxy(object):
     _instance = None
     config = {
         'type': 'interactive',
         'update_on': 'interactive',
     }
-
-    def __new__(cls, *args, **kwargs):
-        if voltron and not cls._instance:
-                cls._instance = super(VoltronProxy, cls).__new__(cls, *args, **kwargs)
-        else:
-            cls._instance = None
-        return cls._instance
 
     def __init__(self):
         self.connected = False
@@ -75,3 +68,8 @@ class VoltronProxy(object):
             print("Disconnected from voltron")
         else:
             print("Not connected")
+
+if not voltron:
+    VoltronProxy = lambda *args: None
+else:
+    VoltronProxy = _VoltronProxy
