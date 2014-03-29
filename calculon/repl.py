@@ -6,6 +6,7 @@ import tokenize, token
 import sys
 import Pyro4
 import itertools
+import threading
 import re
 from collections import defaultdict
 
@@ -23,6 +24,7 @@ disp = None
 last_result = defaultdict(constant_factory(None))
 last_line = ""
 repl = None
+lock = threading.Lock()
 watched_exprs = []
 
 def warn(msg):
@@ -35,8 +37,16 @@ def safe_eval(expr):
         warn(e)
         return 0
 
+def mlock(lock):
+    def dec(f):
+        def inner(*args, **kwargs):
+            with lock:
+                return f(*args, **kwargs)
+        return inner
+    return dec
 
 class CalculonInterpreter(code.InteractiveInterpreter):
+    @mlock(lock)
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
         global disp, last_result, last_line, repl
         eval_source = True
