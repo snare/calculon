@@ -6,6 +6,7 @@ import tokenize, token
 import sys
 import Pyro4
 import itertools
+import threading
 import re
 from collections import defaultdict
 
@@ -23,6 +24,7 @@ disp = None
 last_result = defaultdict(constant_factory(None))
 last_line = ""
 repl = None
+lock = threading.Lock()
 watched_exprs = []
 
 def warn(msg):
@@ -35,8 +37,22 @@ def safe_eval(expr):
         warn(e)
         return 0
 
+def mlock(lock):
+    def dec(f):
+        def inner(*args, **kwargs):
+            with lock:
+                return f(*args, **kwargs)
+        return inner
+    return dec
+
+def update_display_exprs():
+    disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
+
+def debugger_stopped_callback(msg):
+    update_display_exprs()
 
 class CalculonInterpreter(code.InteractiveInterpreter):
+    @mlock(lock)
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
         global disp, last_result, last_line, repl
         eval_source = True
@@ -114,13 +130,16 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             self.runcode(code)
 
         # push functions and data into locals if they're not there
-        if '_watch' not in self.locals:
+        if '_watch_expr' not in self.locals:
             self.locals['switch'] = switch
             self.locals['disp'] = disp
             self.locals['_watch_expr'] = watch_expr
             self.locals['_unwatch_expr'] = unwatch_expr
             proxy = VoltronProxy()
             if proxy:
+                if proxy.connected:
+                    cb_proxy = VoltronProxy()
+                    cb_proxy.start_callback_thread(lock, debugger_stopped_callback)
                 self.locals['V'] = proxy
 
         # update value from last operation
@@ -132,7 +151,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
         except KeyError as e:
             self.locals['__builtins__']['_'] = 0
 
-        disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
+        update_display_exprs()
 
         return False
 

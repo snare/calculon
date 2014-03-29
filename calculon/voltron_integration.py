@@ -8,19 +8,12 @@ try:
 except ImportError:
     voltron = None
 
-class VoltronProxy(object):
+class _VoltronProxy(object):
     _instance = None
     config = {
         'type': 'interactive',
-        'update_on': 'interactive',
+        'update_on': 'stop',
     }
-
-    def __new__(cls, *args, **kwargs):
-        if voltron and not cls._instance:
-                cls._instance = super(VoltronProxy, cls).__new__(cls, *args, **kwargs)
-        else:
-            cls._instance = None
-        return cls._instance
 
     def __init__(self):
         self.connected = False
@@ -52,6 +45,8 @@ class VoltronProxy(object):
         else:
             raise Exception("Not connected")
 
+    def start_callback_thread(self, lock, callback):
+        return self.client.start_callback_thread(lock, callback)
 
     def connect(self):
         if not self.connected:
@@ -60,13 +55,13 @@ class VoltronProxy(object):
                 self.connected = True
                 print("Connected to voltron")
             except socket.error, e:
+                print("Couldn't connect because %s" % str(e))
                 pass
             except Exception, e:
                 print("Error loading voltron: " + str(e))
                 print("Make sure you have the most recent version of voltron")
         else:
             print("Already connected")
-
     def disconnect(self):
         if self.connected:
             self.client.close()
@@ -75,3 +70,8 @@ class VoltronProxy(object):
             print("Disconnected from voltron")
         else:
             print("Not connected")
+
+if not voltron:
+    VoltronProxy = lambda *args: None
+else:
+    VoltronProxy = _VoltronProxy
