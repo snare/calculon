@@ -12,7 +12,7 @@ class _VoltronProxy(object):
     _instance = None
     config = {
         'type': 'interactive',
-        'update_on': 'interactive',
+        'update_on': 'stop',
     }
 
     def __init__(self):
