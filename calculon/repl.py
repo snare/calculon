@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import rl
-import curses
 import code
 import os
 import tokenize, token
@@ -159,13 +158,6 @@ class CalculonInterpreter(code.InteractiveInterpreter):
 
 class Repl(object):
     def __init__(self, scr, offset=0):
-        # set up windows
-        self.scr = scr
-        h,w = self.scr.getmaxyx()
-        self.win = curses.newwin(h - 1 - offset, w, offset, 0)
-        self.win.scrollok(True)
-        self.win.keypad(1)
-
         # set up line editor
         # rl.history.read_file(CONSOLE_HISTORY)
         self.lastbuf = None

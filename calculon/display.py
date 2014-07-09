@@ -22,6 +22,12 @@ BASE_FMT = {
 
 VALID_FORMATS = ['h','d','o','a','u','b']
 
+needs_redraw = False
+
+def sigwinch_handler(n, frame):
+    global needs_redraw
+    needs_redraw = True
+
 # this kinda sucks, maybe do it without system
 class HiddenCursor(object):
     def __enter__(self):
@@ -46,7 +52,7 @@ class CalculonDisplay (object):
         self.padding = self.config['padding']
         self.attrs = self.config['attrs']
 
-        self.header = 'calculon v1.0'
+        self.header = 'calculon'
         self.show_header = True
 
         # Watched variables
@@ -105,9 +111,13 @@ class CalculonDisplay (object):
         self.redraw()
 
     def redraw(self, all=False):
+        global needs_redraw
+
         self.update_bin_mode()
-        if all:
+        
+        if all or needs_redraw:
             self.draw_state['all'] = True
+            needs_redraw = False
         if self.draw_state['all']:
             print(self.term.clear())
         if self.draw_state['header'] or self.draw_state['all']:

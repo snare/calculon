@@ -4,6 +4,7 @@ import argparse
 import Pyro4
 import os
 import code
+import signal
 from blessings import Terminal
 
 from .display import *
@@ -13,6 +14,9 @@ import repl
 
 def display():
     with HiddenCursor():
+        # register resize handler
+        signal.signal(signal.SIGWINCH, sigwinch_handler)
+
         # setup display
         disp = CalculonDisplay()
 
@@ -56,8 +60,8 @@ def integrated():
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='sub-command help')
-    sp = subparsers.add_parser('integrated', help='display with integrated console')
-    sp.set_defaults(func=integrated)
+    # sp = subparsers.add_parser('integrated', help='display with integrated console')
+    # sp.set_defaults(func=integrated)
     sp = subparsers.add_parser('display', help='display only')
     sp.set_defaults(func=display)
     sp = subparsers.add_parser('console', help='console only')
