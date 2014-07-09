@@ -4,15 +4,21 @@ calculon
 A terminal-based programmer's calculator
 ----------------------------------------
 
-I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a Python REPL, so I figured I'd have a go at writing a quick terminal-based calculator in Python.
+I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a Python REPL, so I figured I'd have a go at writing a quick terminal-based calculator in Python. The result is Calculon.
+
+Calculon is a programmer's calculator based on an embedded Python REPL. It's split into two components - the display and the REPL - each of which are run in a separate terminal. There are two options for the REPL - either the embedded Python REPL (based on the Python `code` module, or an instance of `bpython`.
+
+Here is Calculon running on top of `bpython` in two panes of an iTerm window:
 
 [![calculon example](http://i.imgur.com/F5BJYAu.png)](#example)
 
+And in a wider window:
+
 [![calculon example2](http://i.imgur.com/aqb6a1u.png)](#example2)
 
-**Note: Calculon currently only supports the new decoupled mode, wherein the display and REPL are run in different terminals. Eventually I'll fix the integrated mode.**
+And here is Calculon running with the embedded REPL, again using iTerm panes:
 
-Calculon supports two modes of operation - 'integrated' and 'decoupled'. When run in integrated mode (the default), the display and an embedded REPL are displayed in a single terminal session. The embedded REPL is a standard Python console provided by the `code` module. Decoupled mode allows you to run the display and REPL in different terminal sessions. The advantage of this mode is that you can also use `bpython` (or possibly other REPLs with some hacking) as the REPL to talk to the `calculon` display.
+[![calculon example3](http://i.imgur.com/9CaINxg.png)](#example3)
 
 Dependencies
 ------------
