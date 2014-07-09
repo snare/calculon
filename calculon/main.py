@@ -1,8 +1,10 @@
+from __future__ import print_function
+
 import argparse
-import curses
 import Pyro4
 import os
 import code
+from blessings import Terminal
 
 from .display import *
 from .env import *
@@ -26,8 +28,17 @@ def display():
 
 
 def console():
+    t = Terminal()
+
+    # clear screen
+    print(t.clear, end="")
+
     # retrieve vended display object
-    disp = Pyro4.Proxy(ENV['uri'])
+    try:
+        disp = Pyro4.Proxy(ENV['uri'])
+    except:
+        print(t.bold("Failed to connect to display"))
+        disp = None
     repl.disp = disp
     
     # connect to voltron

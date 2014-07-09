@@ -64,6 +64,9 @@ class CalculonDisplay (object):
         # set initial value
         self.update_value(0)
 
+    def are_you_there(self):
+        return True
+
     def init_config(self, config):
         # update text attributes
         for sec in config['attrs']:

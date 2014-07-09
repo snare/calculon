@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import rl
 import curses
 import code
@@ -8,6 +10,7 @@ import Pyro4
 import itertools
 import re
 from collections import defaultdict
+from blessings import Terminal
 
 from .colour import *
 from .env import *
@@ -25,6 +28,8 @@ last_line = ""
 repl = None
 watched_exprs = []
 
+t = Terminal()
+
 def warn(msg):
     sys.stderr.write("Warning: %s\n" % msg)
 
@@ -38,7 +43,7 @@ def safe_eval(expr):
 
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
-        global disp, last_result, last_line, repl
+        global disp, last_result, last_line, repl, ENV
         eval_source = True
 
         # if the code starts with an operator, prepend the _ variable
@@ -123,16 +128,31 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             if proxy:
                 self.locals['V'] = proxy
 
-        # update value from last operation
+        # make sure there's a valid connection to the display
         try:
-            result = self.locals['__builtins__']['_']
-            if type(result) in [int, long] and result != last_result['_']:
-                disp.update_value(result)
-                last_result['_'] = result
-        except KeyError as e:
-            self.locals['__builtins__']['_'] = 0
+            disp.are_you_there()
+        except:
+            # reload the environment just in case the display has been started/restarted
+            ENV = load_env()
+            disp = Pyro4.Proxy(ENV['uri'])
+            try:
+                disp.are_you_there()
+            except:
+                disp = None
 
-        disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
+        # update value from last operation
+        if disp:
+            try:
+                result = self.locals['__builtins__']['_']
+                if type(result) in [int, long] and result != last_result['_']:
+                    disp.update_value(result)
+                    last_result['_'] = result
+            except KeyError as e:
+                self.locals['__builtins__']['_'] = 0
+
+            disp.set_exprs([(safe_eval(expr), fmt, label) for expr, fmt, label in watched_exprs])
+        else:
+            print(t.bold("No display"))
 
         return False
 
