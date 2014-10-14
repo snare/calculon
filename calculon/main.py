@@ -9,7 +9,7 @@ from blessings import Terminal
 from .display import *
 from .env import *
 from .voltron_integration import VoltronProxy
-import repl
+from . import repl
 
 def display():
     with HiddenCursor():
@@ -45,7 +45,7 @@ def console():
     v = VoltronProxy()
 
     # run repl
-    code.InteractiveConsole.runsource = repl.CalculonInterpreter.runsource.im_func
+    code.InteractiveConsole.runsource = repl.CalculonInterpreter.runsource
     code.interact(local=locals())
 
 

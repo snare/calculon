@@ -8,6 +8,7 @@ import tokenize, token
 import sys
 import Pyro4
 import itertools
+import functools
 import re
 from collections import defaultdict
 from blessings import Terminal
@@ -17,10 +18,13 @@ from .env import *
 from .voltron_integration import VoltronProxy
 from .display import VALID_FORMATS
 
+if sys.version_info[0] > 2:
+	long = int
+
 CALCULON_HISTORY = os.path.join(ENV.dir, 'history')
 
 def constant_factory(value):
-    return itertools.repeat(value).next
+    return functools.partial(next, itertools.repeat(value))
 
 disp = None
 last_result = defaultdict(constant_factory(None))
