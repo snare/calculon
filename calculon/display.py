@@ -1,3 +1,4 @@
+from __future__ import division
 import sys
 import string
 import struct
@@ -143,7 +144,7 @@ class CalculonDisplay (object):
         self.draw_state['all'] = False
 
     def get_value_formats(self):
-        return filter(lambda x: x in VALID_FORMATS and x != 'b', self.formats)
+        return [ x for x in self.formats if x in VALID_FORMATS and x != 'b' ]
 
     def num_rows(self):
         return self.offset_exprs() + self.num_rows_exprs() + self.padding['bottom']
@@ -258,7 +259,7 @@ class CalculonDisplay (object):
             attr = self.attrs['err']
         else:
             attr = self.attrs['bval']
-        for i in xrange(len(s)):
+        for i in range(len(s)):
             if i != 0 and i % self.bin_row == 0:
                 y += 1
                 x = self.padding['left']
@@ -271,7 +272,7 @@ class CalculonDisplay (object):
             self.draw_str(s[i], attr, x*2+p, y)
 
     def draw_binary_labels(self):
-        rows = range(self.bits / self.bin_row)
+        rows = range(self.bits // self.bin_row)
         y = self.offset_bin() + self.padding['bintop'] + len(rows) - 1
         for i in rows:
             right = str(i * self.bin_row)

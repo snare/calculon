@@ -8,7 +8,7 @@ def load_env():
         'dir':  {
             'path': '~/.calculon',
             'create': True,
-            'mode': 0700
+            'mode': 0o700
         },
         'files': {
             'config': {

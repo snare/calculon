@@ -59,9 +59,9 @@ class VoltronProxy(object):
                 self.client = voltron.comms.InteractiveClient(config=self.config)
                 self.connected = True
                 print("Connected to voltron")
-            except socket.error, e:
+            except socket.error:
                 pass
-            except Exception, e:
+            except Exception as e:
                 print("Error loading voltron: " + str(e))
                 print("Make sure you have the most recent version of voltron")
         else:
