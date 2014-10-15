@@ -8,7 +8,7 @@ import repl
 if 'bpython' in sys.modules.keys():
     # patch repl
     import bpython
-    bpython.repl.Interpreter.runsource = repl.CalculonInterpreter.runsource.im_func
+    bpython.repl.Interpreter.runsource = repl.CalculonInterpreter.runsource.__func__
 
     # retrieve vended display object
     disp = Pyro4.Proxy(ENV['uri'])

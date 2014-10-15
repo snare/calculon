@@ -44,12 +44,12 @@ def console():
         print(t.bold("Failed to connect to display"))
         disp = None
     repl.disp = disp
-    
+
     # connect to voltron
     v = VoltronProxy()
 
     # run repl
-    code.InteractiveConsole.runsource = repl.CalculonInterpreter.runsource
+    code.InteractiveConsole.runsource = repl.CalculonInterpreter.runsource.__func__
     code.interact(local=locals())
 
 
