@@ -49,7 +49,7 @@ def console():
     v = VoltronProxy()
 
     # run repl
-    code.InteractiveConsole.runsource = repl.CalculonInterpreter.runsource.__func__
+    code.InteractiveConsole.runsource = repl.CalculonInterpreter().runsource
     code.interact(local=locals())
 
 
