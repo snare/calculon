@@ -7,6 +7,7 @@ import code
 import signal
 from blessings import Terminal
 
+import calculon
 from .display import *
 from .env import *
 from .voltron_integration import VoltronProxy
@@ -39,18 +40,25 @@ def console():
 
     # retrieve vended display object
     try:
-        disp = Pyro4.Proxy(ENV['uri'])
+        calculon.disp = Pyro4.Proxy(ENV['uri'])
     except:
         print(t.bold("Failed to connect to display"))
-        disp = None
-    repl.disp = disp
+        calculon.disp = None
+    repl.disp = calculon.disp
 
     # connect to voltron
-    v = VoltronProxy()
+    calculon.V = VoltronProxy()
+    calculon.V.disp = calculon.disp
+    calculon.V.update_disp()
 
     # run repl
     code.InteractiveConsole.runsource = repl.CalculonInterpreter().runsource
     code.interact(local=locals())
+
+    # clean up
+    calculon.V._disconnect()
+    if calculon.disp:
+        calculon.disp._pyroRelease()
 
 
 def integrated():

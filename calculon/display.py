@@ -55,6 +55,7 @@ class CalculonDisplay (object):
 
         self.header = 'calculon'
         self.show_header = True
+        self.voltron_status = None
 
         # Watched variables
         self.lastval = 0
@@ -87,6 +88,10 @@ class CalculonDisplay (object):
         self.update_value(0)
         self.redraw()
 
+    def set_voltron_status(self, status):
+        self.voltron_status = status
+        self.draw_state['header'] = True
+
     def update_bin_mode(self):
         # detect bin display mode
         old_mode = self.cur_bin_mode
@@ -115,7 +120,7 @@ class CalculonDisplay (object):
         global needs_redraw
 
         self.update_bin_mode()
-        
+
         if all or needs_redraw:
             self.draw_state['all'] = True
             needs_redraw = False
@@ -160,7 +165,7 @@ class CalculonDisplay (object):
         return len(self.get_value_formats())
 
     def num_rows_bin(self):
-        return self.bits / self.bin_row + self.padding['bintop'] + self.padding['binbottom']
+        return int(self.bits / self.bin_row + self.padding['bintop'] + self.padding['binbottom'])
 
     def num_rows_exprs(self):
         n = len(self.exprs)
@@ -182,8 +187,12 @@ class CalculonDisplay (object):
 
     def draw_header(self):
         if self.show_header:
-            head = self.header + ' ' * (self.term.width - len(self.header))
-            self.draw_str(head, self.attrs['header'])
+            self.draw_str(' ' * self.term.width, self.attrs['header'], 0, 0)
+            self.draw_str(self.header, self.attrs['header'], self.padding['left'] )
+            if self.voltron_status != None:
+                status = '<={}=> voltron'.format('' if self.voltron_status else '/')
+                x = self.term.width - len(status) - self.padding['right']
+                self.draw_str(status, self.attrs['header'], x)
 
     def clear_value(self, varname=None):
         y = self.padding['top']
@@ -204,25 +213,29 @@ class CalculonDisplay (object):
             y += 1
 
     def draw_value_at_row(self, value, fmt, row, label=None):
-        fmtd = ''
-        if fmt in ['h', 'd', 'o']:
-            fmtd = BASE_FMT[fmt].format(value)
-            attr = self.attrs[fmt + 'val']
-        elif fmt == 'a':
-            s = ('{0:0=%dX}' % (self.bits/4)).format(value)
-            a = [chr(int(s[i:i+2],16)) for i in range(0, len(s), 2)]
-            for c in a:
-                if c not in string.printable or c == '\n':
-                    fmtd += '.'
-                else:
-                    fmtd += c
-                    if c in (r'{', r'}'):
+        if value == None:
+            fmtd = '<undefined>'
+            attr = self.attrs['err']
+        else:
+            fmtd = ''
+            if fmt in ['h', 'd', 'o']:
+                fmtd = BASE_FMT[fmt].format(value)
+                attr = self.attrs[fmt + 'val']
+            elif fmt == 'a':
+                s = ('{0:0=%dX}' % (self.bits/4)).format(value)
+                a = [chr(int(s[i:i+2],16)) for i in range(0, len(s), 2)]
+                for c in a:
+                    if c not in string.printable or c == '\n':
+                        fmtd += '.'
+                    else:
                         fmtd += c
-            attr = self.attrs['aval']
-        elif fmt == 'u':
-            # s = ('{0:0=%dX}' % (self.bits/4)).format(value)
-            # a = [(chr(int(s[i:i+2],16)) + chr(int(s[i+2:i+4],16))).decode('utf-16') for i in range(0, len(s), 4)]
-            attr = self.attrs['uval']
+                        if c in (r'{', r'}'):
+                            fmtd += c
+                attr = self.attrs['aval']
+            elif fmt == 'u':
+                # s = ('{0:0=%dX}' % (self.bits/4)).format(value)
+                # a = [(chr(int(s[i:i+2],16)) + chr(int(s[i+2:i+4],16))).decode('utf-16') for i in range(0, len(s), 4)]
+                attr = self.attrs['uval']
         if self.align == 'right':
             col = self.num_cols() - self.padding['right'] - self.padding['label'] - len(fmtd) - 2
             self.draw_str(fmtd, attr, col, row)
