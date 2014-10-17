@@ -48,7 +48,7 @@ class VoltronProxy(object):
     def __getattr__(self, key):
         if self.connected:
             try:
-                req = api_request('read_registers')
+                req = api_request('registers')
                 res = self.client.send_request(req)
                 if res.status == 'success':
                     return res.registers[key]
@@ -62,7 +62,7 @@ class VoltronProxy(object):
     def __getitem__(self, key):
         if self.connected:
             try:
-                req = api_request('read_memory')
+                req = api_request('memory')
                 if isinstance(key, slice):
                     req.address = key.start
                     req.length = key.stop - key.start

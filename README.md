@@ -99,6 +99,9 @@ Or memory:
     >>> V[V.rbp:V.rbp + 32]
     'x\xee\xbf_\xff\x7f\x00\x00\xfd\xf5\xad\x85\xff\x7f\x00\x00'
 
+Values from Voltron can now be included in `watch` expressions:
+
+    >>> watch V.rip
 
 Credits
 -------
