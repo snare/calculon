@@ -15,5 +15,5 @@ setup(
     install_package_data = True,
     entry_points = {'console_scripts': ['calculon = calculon:main']},
     zip_safe=False,
-    dependency_links = ["https://github.com/snarez/scruffy/tarball/master#egg=scruffy"]
+    dependency_links = ["https://github.com/snarez/scruffy/tarball/v0.1#egg=scruffy"]
 )
