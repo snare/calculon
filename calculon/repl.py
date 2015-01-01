@@ -16,7 +16,7 @@ from blessings import Terminal
 import calculon
 from .colour import *
 from .env import *
-from .voltron_integration import VoltronProxy
+from .voltron_integration import *
 from .display import VALID_FORMATS
 
 if sys.version_info[0] > 2:
@@ -140,10 +140,11 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 self.locals['switch'] = swap
                 self.locals['_watch_expr'] = watch_expr
                 self.locals['_unwatch_expr'] = unwatch_expr
-                calculon.V.callback = update_display_exprs
-                calculon.V.start_watcher()
-                calculon.V.update_disp()
-                self.locals['V'] = calculon.V
+                if calculon.V:
+                    calculon.V.callback = update_display_exprs
+                    calculon.V.start_watcher()
+                    calculon.V.update_disp()
+                    self.locals['V'] = calculon.V
 
             # make sure there's a valid connection to the display
             try:
@@ -156,7 +157,8 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                     calculon.disp.are_you_there()
                 except:
                     calculon.disp = None
-            calculon.V.disp = calculon.disp
+            if calculon.V:
+                calculon.V.disp = calculon.disp
 
             # update value from last operation
             if calculon.disp:

@@ -5,3 +5,4 @@ from .display import *
 from .env import *
 
 disp = None
+V = None

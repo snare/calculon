@@ -10,7 +10,7 @@ from blessings import Terminal
 import calculon
 from .display import *
 from .env import *
-from .voltron_integration import VoltronProxy
+from .voltron_integration import *
 from . import repl
 
 def display():
@@ -47,16 +47,20 @@ def console():
     repl.disp = calculon.disp
 
     # connect to voltron
-    calculon.V = VoltronProxy()
-    calculon.V.disp = calculon.disp
-    calculon.V.update_disp()
+    try:
+        calculon.V = VoltronProxy()
+        calculon.V.disp = calculon.disp
+        calculon.V.update_disp()
+    except NameError:
+        pass
 
     # run repl
     code.InteractiveConsole.runsource = repl.CalculonInterpreter().runsource
     code.interact(local=locals())
 
     # clean up
-    calculon.V._disconnect()
+    if calculon.V:
+        calculon.V._disconnect()
     if calculon.disp:
         calculon.disp._pyroRelease()
 

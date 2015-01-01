@@ -3,7 +3,7 @@ import sys
 
 import calculon
 from .env import *
-from .voltron_integration import VoltronProxy
+from .voltron_integration import *
 import repl
 
 if 'bpython' in sys.modules.keys():
@@ -17,5 +17,8 @@ if 'bpython' in sys.modules.keys():
     print("Connected to calculon")
 
     # connect to voltron
-    calculon.V = VoltronProxy()
-    calculon.V.disp = calculon.disp
+    try:
+        calculon.V = VoltronProxy()
+        calculon.V.disp = calculon.disp
+    except NameError:
+        pass
