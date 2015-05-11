@@ -22,7 +22,7 @@ from .display import VALID_FORMATS
 if sys.version_info[0] > 2:
 	long = int
 
-CALCULON_HISTORY = os.path.join(ENV.dir, 'history')
+CALCULON_HISTORY = ENV.main_dir.path_to('history')
 
 def constant_factory(value):
     return functools.partial(next, itertools.repeat(value))
@@ -152,7 +152,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             except:
                 # reload the environment just in case the display has been started/restarted
                 ENV = load_env()
-                calculon.disp = Pyro4.Proxy(ENV['uri'])
+                calculon.disp = Pyro4.Proxy(ENV.main_dir.uri.content)
                 try:
                     calculon.disp.are_you_there()
                 except:

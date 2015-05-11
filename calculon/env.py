@@ -1,36 +1,17 @@
-from scruffy import Environment
+from scruffy import *
 
 ENV = None
 CONFIG = None
 
 def load_env():
-    ENV = Environment({
-        'dir':  {
-            'path': '~/.calculon',
-            'create': True,
-            'mode': 0o700
-        },
-        'files': {
-            'config': {
-                'type':     'config',
-                'default':  {
-                    'path':     'config/default.cfg',
-                    'rel_to':   'pkg',
-                    'pkg':      'calculon'
-                },
-                'read':     True
-            },
-            'uri': {
-                'type':     'raw',
-                'read':     True,
-                'create':   True,
-                'var':      'CALCULON_URI'
-            }
-        },
-        'basename': 'calculon'
-    })
+    ENV = Environment(
+        main_dir=Directory('~/.calculon', create=True,
+            config=ConfigFile('config', defaults=File('config/default.cfg', parent=PackageDirectory())),
+            uri=File('uri')
+        )
+    )
     return ENV
 
 ENV = load_env()
 
-CONFIG = ENV['config']
+CONFIG = ENV.config

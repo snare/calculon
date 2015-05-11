@@ -26,7 +26,7 @@ def display():
         uri = daemon.register(disp)
 
         # write uri to file
-        ENV.write_file('uri', str(uri))
+        ENV.main_dir.uri.write(str(uri))
 
         # loop
         daemon.requestLoop()
@@ -40,7 +40,7 @@ def console():
 
     # retrieve vended display object
     try:
-        calculon.disp = Pyro4.Proxy(ENV['uri'])
+        calculon.disp = Pyro4.Proxy(ENV.main_dir.uri.content)
     except:
         print(t.bold("Failed to connect to display"))
         calculon.disp = None
