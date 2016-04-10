@@ -11,7 +11,7 @@ import functools
 import threading
 import re
 from collections import defaultdict
-from blessings import Terminal
+from blessed import Terminal
 
 import calculon
 from .colour import *
@@ -20,9 +20,10 @@ from .voltron_integration import *
 from .display import VALID_FORMATS
 
 if sys.version_info[0] > 2:
-	long = int
+    long = int
 
 CALCULON_HISTORY = ENV.main_dir.path_to('history')
+
 
 def constant_factory(value):
     return functools.partial(next, itertools.repeat(value))
@@ -37,8 +38,10 @@ t = Terminal()
 
 lock = threading.Lock()
 
+
 def warn(msg):
     sys.stderr.write("Warning: %s\n" % msg)
+
 
 def safe_eval(expr):
     try:
@@ -191,7 +194,6 @@ class Repl(object):
         # set prompt
         self.update_prompt()
 
-
     def run(self):
         while 1:
             # read the next line
@@ -208,7 +210,7 @@ class Repl(object):
     def process_prompt(self, prompt):
         return self.escape_prompt(prompt['format'].format(**FMT_ESCAPES))
 
-    def escape_prompt(self, prompt, start = "\x01", end = "\x02"):
+    def escape_prompt(self, prompt, start="\x01", end="\x02"):
         escaped = False
         result = ""
         for c in prompt:
@@ -226,12 +228,14 @@ class Repl(object):
 def watch_expr(expr, label, format='h'):
     watched_exprs.append((expr, format, label))
 
+
 def unwatch_expr(idx):
     global exprs
     del watched_exprs[idx]
     del exprs[idx]
     calculon.disp.set_exprs(exprs)
     calculon.disp.redraw(True)
+
 
 def swap(value):
     h = hex(value)[2:]

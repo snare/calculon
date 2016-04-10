@@ -10,7 +10,7 @@ setup(
     keywords="calculator programmer hex 64-bit",
     url="https://github.com/snare/calculon",
     packages=['calculon'],
-    install_requires=['rl', 'Pyro4', 'blessings', 'scruffington'],
+    install_requires=['rl', 'Pyro4', 'blessed', 'scruffington'],
     package_data={'calculon': ['config/*']},
     entry_points={'console_scripts': ['calculon=calculon:main']},
     zip_safe=False

@@ -5,7 +5,7 @@ import struct
 import Pyro4
 import os
 import time
-from blessings import Terminal
+from blessed import Terminal
 
 from .env import *
 

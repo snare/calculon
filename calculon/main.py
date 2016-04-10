@@ -5,7 +5,7 @@ import Pyro4
 import os
 import code
 import signal
-from blessings import Terminal
+from blessed import Terminal
 
 import calculon
 from .display import *
