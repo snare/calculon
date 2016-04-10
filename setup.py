@@ -8,7 +8,7 @@ setup(
     description=("A terminal-based programmer's calculator endowed with unholy acting talent by the Robot Devil"),
     license="Buy snare a beer",
     keywords="calculator programmer hex 64-bit",
-    url="https://github.com/snarez/calculon",
+    url="https://github.com/snare/calculon",
     packages=['calculon'],
     install_requires=['rl', 'Pyro4', 'blessings', 'scruffington'],
     package_data={'calculon': ['config/*']},
