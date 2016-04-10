@@ -1,6 +1,7 @@
 from __future__ import print_function
 import socket
 import threading
+from requests.exceptions import ConnectionError
 
 import calculon
 from .env import *
@@ -23,16 +24,16 @@ if HAS_VOLTRON:
             self.callback = callback
 
         def run(self, *args, **kwargs):
-            self.done = False
-            self.client = voltron.core.Client()
-            self.client.connect()
-            while not self.done:
-                try:
-                    res = self.client.send_request(api_request('wait', timeout=1))
-                    if res.is_success:
-                        self.callback()
-                except Exception as e:
-                    done = True
+            if self.callback:
+                self.done = False
+                self.client = voltron.core.Client()
+                while not self.done:
+                    try:
+                        res = self.client.send_request(api_request('version', block=True, timeout=1))
+                        if res.is_success:
+                            self.callback()
+                    except Exception as e:
+                        done = True
 
     class VoltronProxy(object):
         _instance = None
@@ -88,7 +89,7 @@ if HAS_VOLTRON:
 
         def _connect(self):
             self.client = voltron.core.Client()
-            self.client.connect()
+            self.client.send_request(api_request('version', block=False))
             self.start_watcher()
             self.connected = True
             self.update_disp()
@@ -99,7 +100,7 @@ if HAS_VOLTRON:
                     try:
                         self._connect()
                         print("Connected to voltron")
-                    except socket.error:
+                    except ConnectionError:
                         pass
                     except Exception as e:
                         raise e
