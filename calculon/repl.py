@@ -3,13 +3,15 @@ from __future__ import print_function
 import rl
 import code
 import os
-import tokenize, token
+import tokenize
+import token
 import sys
 import Pyro4
 import itertools
 import functools
 import threading
 import re
+import six
 from collections import defaultdict
 from blessed import Terminal
 
@@ -22,7 +24,7 @@ from .display import VALID_FORMATS
 if sys.version_info[0] > 2:
     long = int
 
-CALCULON_HISTORY = ENV.main_dir.path_to('history')
+CALCULON_HISTORY = env.main_dir.path_to('history')
 
 
 def constant_factory(value):
@@ -51,9 +53,19 @@ def safe_eval(expr):
         return 0
 
 
+def formatter(v):
+    """
+    Default REPL formatter.
+    """
+    if config.repl_format:
+        return config.repl_format.format(v=v, t=t)
+    else:
+        return v
+
+
 class CalculonInterpreter(code.InteractiveInterpreter):
     def runsource(self, source, filename='<input>', symbol='single', encode=True):
-        global last_result, last_line, repl, ENV
+        global last_result, last_line, repl, env
 
         def update_display_exprs():
             global exprs
@@ -123,6 +135,7 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             else:
                 last_line = source
 
+            temp_stdout = None
             if eval_source:
                 # compile code
                 try:
@@ -134,7 +147,11 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                     return True
 
                 # if we got a valid code object, run it
+                stdout = sys.stdout
+                temp_stdout = six.StringIO()
+                sys.stdout = temp_stdout
                 self.runcode(code)
+                sys.stdout = stdout
 
             # push functions and data into locals if they're not there
             if 'disp' not in self.locals:
@@ -153,8 +170,8 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 calculon.disp.are_you_there()
             except:
                 # reload the environment just in case the display has been started/restarted
-                ENV = load_env()
-                calculon.disp = Pyro4.Proxy(ENV.main_dir.uri.content)
+                env = load_env()
+                calculon.disp = Pyro4.Proxy(env.main_dir.uri.content)
                 try:
                     calculon.disp.are_you_there()
                 except:
@@ -163,6 +180,17 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 calculon.V.disp = calculon.disp
 
             # update value from last operation
+            if calculon.formatter and temp_stdout:
+                try:
+                    # only print with the formatter if the output is an int and nothing else
+                    int(temp_stdout.getvalue().strip())
+                    print(calculon.formatter(self.locals['__builtins__']['_']))
+                except:
+                    # otherwise just print whatever came out of `exec`
+                    print(temp_stdout.getvalue(), end='')
+            else:
+                if temp_stdout:
+                    print(temp_stdout.getvalue(), end='')
             if calculon.disp:
                 try:
                     result = self.locals['__builtins__']['_']
@@ -173,8 +201,6 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                     self.locals['__builtins__']['_'] = 0
 
                 update_display_exprs()
-            else:
-                print(t.bold("No display"))
         finally:
             lock.release()
 
@@ -204,7 +230,7 @@ class Repl(object):
             rl.readline.write_history_file(CALCULON_HISTORY)
 
     def update_prompt(self):
-        self.prompt = self.process_prompt(CONFIG['prompt'])
+        self.prompt = self.process_prompt(config['prompt'])
 
     def process_prompt(self, prompt):
         return self.escape_prompt(prompt['format'].format(**FMT_ESCAPES))

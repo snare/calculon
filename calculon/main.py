@@ -26,7 +26,7 @@ def display():
         uri = daemon.register(disp)
 
         # write uri to file
-        ENV.main_dir.uri.write(str(uri))
+        env.main_dir.uri.write(str(uri))
 
         # loop
         daemon.requestLoop()
@@ -40,7 +40,7 @@ def console():
 
     # retrieve vended display object
     try:
-        calculon.disp = Pyro4.Proxy(ENV.main_dir.uri.content)
+        calculon.disp = Pyro4.Proxy(env.main_dir.uri.content)
     except:
         print(t.bold("Failed to connect to display"))
         calculon.disp = None
@@ -61,18 +61,12 @@ def console():
     if calculon.disp:
         calculon.disp._pyroRelease()
     if calculon.V:
-        calculon.V.watcher.done = True
-
-
-def integrated():
-    pass
+        calculon.V.stop_watcher()
 
 
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='sub-command help')
-    # sp = subparsers.add_parser('integrated', help='display with integrated console')
-    # sp.set_defaults(func=integrated)
     sp = subparsers.add_parser('display', help='display only')
     sp.set_defaults(func=display)
     sp = subparsers.add_parser('console', help='console only')

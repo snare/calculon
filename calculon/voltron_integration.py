@@ -48,3 +48,7 @@ if HAS_VOLTRON:
             if not self.watcher and self.callback:
                 self.watcher = VoltronWatcher(self.callback)
                 self.watcher.start()
+
+        def stop_watcher(self):
+            if self.watcher:
+                calculon.V.watcher.done = True

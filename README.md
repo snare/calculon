@@ -4,7 +4,7 @@ calculon
 A terminal-based programmer's calculator
 ----------------------------------------
 
-I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app and a Python REPL, so I figured I'd have a go at writing a quick terminal-based calculator in Python. The result is Calculon.
+I haven't found many decent programmer's calculators for Mac and I spend a fair bit of time copying and pasting between Calculator.app, a Python REPL and a debugger, so I figured I'd have a go at writing a quick terminal-based calculator in Python. The result is Calculon.
 
 Calculon is a programmer's calculator based on an embedded Python REPL. It's split into two components - the display and the REPL - each of which are run in a separate terminal. There are two options for the REPL - either the embedded Python REPL (based on the Python `code` module, or an instance of `bpython`.
 
@@ -58,10 +58,11 @@ Or, to connect to the display from within a `bpython` instance:
 
 From here, any Python code entered into the REPL that results in a numeric value will be rendered in the display. For example:
 
-	>>> 1234 + 1234
-	2468
+![format_example_1](http://i.imgur.com/Njn9RRJ.png)
 
-2468 will be rendered in the display.
+The result, 0x9a4, will be rendered in the display. When using the embedded REPL (not `bpython`), any numeric results in the REPL will be formatted using the format string defined in the config. By default, this is white coloured hex numbers. The format string can be customised in the configuration, or set in the REPL on the fly like this:
+
+![format_example_2](http://i.imgur.com/y46S1c9.png)
 
 Calculon adds some hackery to the REPL for watching variables. Calling `watch <expr>` will add the given expression to a list of expressions that are tracked and updated every time they change. For example:
 

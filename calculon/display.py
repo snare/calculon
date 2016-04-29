@@ -44,7 +44,7 @@ class CalculonDisplay (object):
         print(self.term.enter_fullscreen())
 
         # parse config
-        self.config = self.init_config(CONFIG)
+        self.config = self.init_config(config)
         self.bin_mode = self.config['bin_mode']
         self.cur_bin_mode = None
         self.bits = self.config['bits']
