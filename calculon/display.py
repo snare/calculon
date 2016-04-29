@@ -55,7 +55,6 @@ class CalculonDisplay (object):
 
         self.header = 'calculon'
         self.show_header = True
-        self.voltron_status = None
 
         # Watched variables
         self.lastval = 0
@@ -87,10 +86,6 @@ class CalculonDisplay (object):
         self.repl_win = repl_win
         self.update_value(0)
         self.redraw()
-
-    def set_voltron_status(self, status):
-        self.voltron_status = status
-        self.draw_state['header'] = True
 
     def update_bin_mode(self):
         # detect bin display mode
@@ -189,10 +184,6 @@ class CalculonDisplay (object):
         if self.show_header:
             self.draw_str(' ' * self.term.width, self.attrs['header'], 0, 0)
             self.draw_str(self.header, self.attrs['header'], self.padding['left'] )
-            if self.voltron_status != None:
-                status = '<={}=> voltron'.format('' if self.voltron_status else '/')
-                x = self.term.width - len(status) - self.padding['right']
-                self.draw_str(status, self.attrs['header'], x)
 
     def clear_value(self, varname=None):
         y = self.padding['top']

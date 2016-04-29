@@ -146,7 +146,6 @@ class CalculonInterpreter(code.InteractiveInterpreter):
                 if calculon.V:
                     calculon.V.callback = update_display_exprs
                     calculon.V.start_watcher()
-                    calculon.V.update_disp()
                     self.locals['V'] = calculon.V
 
             # make sure there's a valid connection to the display

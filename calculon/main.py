@@ -50,7 +50,6 @@ def console():
     try:
         calculon.V = VoltronProxy()
         calculon.V.disp = calculon.disp
-        calculon.V.update_disp()
     except NameError:
         pass
 
@@ -59,10 +58,10 @@ def console():
     code.interact(local=locals())
 
     # clean up
-    if calculon.V:
-        calculon.V._disconnect()
     if calculon.disp:
         calculon.disp._pyroRelease()
+    if calculon.V:
+        calculon.V.watcher.done = True
 
 
 def integrated():
