@@ -80,19 +80,14 @@ Their values will be tracked and the expressions reevaluated. Expressions can be
 
 Where 0 is the ID displayed at the end (or beginning, when right aligned) of the line.
 
-Calculon now has support to connect to [voltron](https://github.com/snarez/voltron) and inspect register state. If you have the most recent version of calculon and voltron, and voltron is running, calculon will connect to it at startup. Calculon can manually connect and disconnect from voltron as follows:
+Calculon can also connect to [voltron](https://github.com/snare/voltron) using Voltron's [REPL client](https://github.com/snare/voltron/wiki/REPL-Client) and inspect register state and memory, and execute debugger commands.
 
-	>>> V.connect()
-	Connected to voltron
-	>>> V.disconnect()
-	Disconnected from voltron
-
-When connected to voltron, calculon can inspect registers:
+Inspecting registers:
 
 	>>> V.rip
 	4294971201
 
-Or memory:
+Memory:
 
     >>> V[V.rbp]
     'x'
@@ -102,6 +97,33 @@ Or memory:
 Values from Voltron can now be included in `watch` expressions:
 
     >>> watch V.rip
+
+Calculon can also execute debugger commands from the REPL:
+
+    >>> print  V("reg read")
+    General Purpose Registers:
+           rax = 0x0000000100000d00  inferior`test_function
+           rbx = 0x0000000000000000
+           rcx = 0x00007fff5fbff9b0
+           rdx = 0x00007fff5fbff8b0
+           rdi = 0x0000000100000f7b  "Usage: inferior < sleep | loop | function | crash >\n"
+           rsi = 0x00007fff5fbff8a0
+           rbp = 0x00007fff5fbff880
+           rsp = 0x00007fff5fbff818
+            r8 = 0x0000000000000000
+            r9 = 0x00007fff7164b0c8  atexit_mutex + 24
+           r10 = 0x00000000ffffffff
+           r11 = 0x0000000100001008  (void *)0x0000000000000000
+           r12 = 0x0000000000000000
+           r13 = 0x0000000000000000
+           r14 = 0x0000000000000000
+           r15 = 0x0000000000000000
+           rip = 0x00007fff8c2a7148  libdyld.dylib`dyld_stub_binder
+        rflags = 0x0000000000000246
+            cs = 0x000000000000002b
+            fs = 0x0000000000000000
+            gs = 0x0000000000000000
+
 
 Credits
 -------
