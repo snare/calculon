@@ -183,9 +183,12 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             if calculon.formatter and temp_stdout:
                 try:
                     # only print with the formatter if the output is an int and nothing else
-                    int(temp_stdout.getvalue().strip())
+                    output = temp_stdout.getvalue().strip()
+                    if output.endswith('L'):
+                        output = output[:-1]
+                    int(output)
                     print(calculon.formatter(self.locals['__builtins__']['_']))
-                except:
+                except Exception as e:
                     # otherwise just print whatever came out of `exec`
                     print(temp_stdout.getvalue(), end='')
             else:
