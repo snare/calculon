@@ -1,8 +1,6 @@
 from __future__ import print_function
 
-import rl
 import code
-import os
 import tokenize
 import token
 import sys
@@ -23,9 +21,6 @@ from .display import VALID_FORMATS
 
 if sys.version_info[0] > 2:
     long = int
-
-CALCULON_HISTORY = env.main_dir.path_to('history')
-
 
 def constant_factory(value):
     return functools.partial(next, itertools.repeat(value))
@@ -61,6 +56,16 @@ def formatter(v):
         return config.repl_format.format(v=v, t=t)
     else:
         return v
+
+
+def displayhook(v):
+    try:
+        print(formatter(v))
+    except:
+        print(v)
+
+    if isinstance(v, int):
+        calculon.disp.update_value(v)
 
 
 class CalculonInterpreter(code.InteractiveInterpreter):
@@ -208,49 +213,6 @@ class CalculonInterpreter(code.InteractiveInterpreter):
             lock.release()
 
         return False
-
-
-class Repl(object):
-    def __init__(self, scr, offset=0):
-        # set up line editor
-        # rl.history.read_file(CONSOLE_HISTORY)
-        self.lastbuf = None
-
-        # create interpreter object
-        self.interp = code.InteractiveInterpreter()
-
-        # set prompt
-        self.update_prompt()
-
-    def run(self):
-        while 1:
-            # read the next line
-            try:
-                line = raw_input(self.prompt.encode(sys.stdout.encoding))
-            except EOFError:
-                break
-            self.interp.runsource(line)
-            rl.readline.write_history_file(CALCULON_HISTORY)
-
-    def update_prompt(self):
-        self.prompt = self.process_prompt(config['prompt'])
-
-    def process_prompt(self, prompt):
-        return self.escape_prompt(prompt['format'].format(**FMT_ESCAPES))
-
-    def escape_prompt(self, prompt, start="\x01", end="\x02"):
-        escaped = False
-        result = ""
-        for c in prompt:
-            if c == "\x1b" and not escaped:
-                result += start + c
-                escaped = True
-            elif c.isalpha() and escaped:
-                result += c + end
-                escaped = False
-            else:
-                result += c
-        return result
 
 
 def watch_expr(expr, label, format='h'):

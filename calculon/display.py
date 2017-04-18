@@ -71,6 +71,7 @@ class CalculonDisplay (object):
         # set initial value
         self.update_value(0)
 
+    @Pyro4.expose
     def are_you_there(self):
         return True
 
@@ -100,17 +101,20 @@ class CalculonDisplay (object):
         if self.bits % self.bin_row > 0:
             self.bits += self.bin_row - (self.bits % self.bin_row)
 
+    @Pyro4.expose
     def update_value(self, value):
         self.lastval = value
         self.draw_state['value'] = True
         self.redraw()
 
+    @Pyro4.expose
     def set_exprs(self, values):
         self.exprs = values
         self.draw_state['exprvalue'] = True
         self.draw_state['exprlabel'] = True
         self.redraw()
 
+    @Pyro4.expose
     def redraw(self, all=False):
         global needs_redraw
 
