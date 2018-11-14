@@ -9,6 +9,8 @@ import repl
 if 'bpython' in sys.modules.keys():
     # patch repl
     import bpython
+    if(sys.version_info >= (3,0)):
+        repl.CalculonInterpreter = calculon.repl.CalculonInterpreter
     bpython.repl.Interpreter.runsource = repl.CalculonInterpreter().runsource
 
     # retrieve vended display object

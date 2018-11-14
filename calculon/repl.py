@@ -160,7 +160,10 @@ class CalculonInterpreter(code.InteractiveInterpreter):
 
             # push functions and data into locals if they're not there
             if 'disp' not in self.locals:
-                self.locals['disp'] = disp
+                if(sys.version_info >= (3,0)):
+                    self.locals['disp'] = calculon.disp
+                else:
+                    self.locals['disp'] = disp
                 self.locals['swap'] = swap
                 self.locals['switch'] = swap
                 self.locals['_watch_expr'] = watch_expr
